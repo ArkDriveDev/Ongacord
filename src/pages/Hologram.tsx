@@ -1,28 +1,35 @@
 import { 
-    IonButtons,
-      IonContent, 
-      IonHeader, 
-      IonMenuButton, 
-      IonPage, 
-      IonTitle, 
-      IonToolbar 
-  } from '@ionic/react';
-  
-  const Hologram: React.FC = () => {
-    return (
-      <IonPage>
-        <IonHeader>
-          <IonToolbar>
-            <IonButtons slot='start'>
-              <IonMenuButton></IonMenuButton>
-            </IonButtons>
-            <IonTitle>Template</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent fullscreen>
-        </IonContent>
-      </IonPage>
-    );
-  };
-  
-  export default  Hologram;
+  IonContent, 
+  IonHeader, 
+  IonPage, 
+} from '@ionic/react';
+import Orb1 from '../images/Orb1.gif';
+import './Hologram.css';
+
+const Hologram: React.FC = () => {
+  return (
+    <IonPage>
+      <IonHeader>
+      </IonHeader>
+
+      <IonContent fullscreen className="hologram-container">
+        <div className="pyramid">
+          <div className="pyramid-face">
+            <img src={Orb1} alt="Hologram Orb" />
+          </div>
+          <div className="pyramid-face">
+            <img src={Orb1} alt="Hologram Orb" />
+          </div>
+          <div className="pyramid-face">
+            <img src={Orb1} alt="Hologram Orb" />
+          </div>
+          <div className="pyramid-face">
+            <img src={Orb1} alt="Hologram Orb" />
+          </div>
+        </div>
+      </IonContent>
+    </IonPage>
+  );
+};
+
+export default Hologram;
