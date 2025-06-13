@@ -1,48 +1,58 @@
+/* Fullscreen black background */
 .hologram-container {
+  background: #000;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Perfect centering container */
+.hologram-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Base positioning */
+.reflection-base {
+  position: relative;
+  margin: 0 auto;
+}
+
+/* Shared image styles */
+.reflection-image {
+  position: absolute;
+  opacity: 0.9;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: black; /* Dark background works best */
 }
 
-.pyramid {
-  position: relative;
-  width: 300px;
-  height: 300px;
-  transform-style: preserve-3d;
-  animation: rotate 20s infinite linear; /* Optional: Auto-rotate */
-}
-
-.pyramid-face {
-  position: absolute;
+.reflection-image img {
   width: 100%;
   height: 100%;
-  opacity: 0.8; /* Adjust transparency */
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  object-fit: contain;
+  filter: brightness(1.3) drop-shadow(0 0 5px cyan);
 }
 
-.pyramid-face img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+/* Individual rotations */
+.reflection-image.top {
+  left: 50%;
+  transform: translateX(-50%) rotate(180deg);
 }
 
-/* Position each face at 90° angles */
-.pyramid-face:nth-child(1) {
-  transform: rotateY(0deg) translateZ(150px);
-}
-.pyramid-face:nth-child(2) {
-  transform: rotateY(90deg) translateZ(150px);
-}
-.pyramid-face:nth-child(3) {
-  transform: rotateY(180deg) translateZ(150px);
-}
-.pyramid-face:nth-child(4) {
-  transform: rotateY(270deg) translateZ(150px);
+.reflection-image.right {
+  top: 50%;
+  transform: translateY(-50%) rotate(270deg);
 }
 
-/* Optional: Rotation animation */
-@keyframes rotate {
-  from { transform: rotateY(0deg); }
-  to { transform: rotateY(360deg); }
+.reflection-image.bottom {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.reflection-image.left {
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
 }
