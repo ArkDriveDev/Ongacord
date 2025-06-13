@@ -22,16 +22,13 @@ import '@ionic/react/css/palettes/dark.system.css';
 /* Theme */
 import './theme/variables.css';
 import Menu from './pages/Menu';
-import Hologram from './pages/Hologram';
-
 setupIonicReact();
 
 const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
       <IonRouterOutlet>
-        <Route exact path="/" component={Menu} />
-        <Route exact path="/hologram" component={Hologram} />
+        <Route path="/" component={Menu} />
       </IonRouterOutlet>
     </IonReactRouter>
   </IonApp>
