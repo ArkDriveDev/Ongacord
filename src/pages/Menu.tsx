@@ -9,7 +9,16 @@ import Hologram from './Hologram';
 import Models from './Models';
 
 const Menu: React.FC = () => {
-  const glow = { animation: 'blink 2s infinite', filter: 'drop-shadow(0 0 8px white)' };
+  const glow = { 
+    animation: 'blink 2s infinite', 
+    filter: 'drop-shadow(0 0 8px white)',
+  };
+
+  // Style for the reversed pyramid icon
+  const reversedPyramidStyle = {
+    ...glow,
+    transform: 'scaleY(-1)' // This flips the icon vertically
+  };
 
   const menuItems = [
     { name: 'Hologram', url: '/hologram', icon: prismOutline },
@@ -35,7 +44,11 @@ const Menu: React.FC = () => {
                 routerDirection="none"
                 style={h2Style}
               >
-                <IonIcon icon={item.icon} slot="start" style={glow} />
+                <IonIcon 
+                  icon={item.icon} 
+                  slot="start" 
+                  style={item.icon === prismOutline ? reversedPyramidStyle : glow} 
+                />
                 {item.name}
               </IonItem>
             </IonMenuToggle>
