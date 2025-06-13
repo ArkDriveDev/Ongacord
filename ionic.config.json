@@ -1,0 +1,7 @@
+{
+  "name": "Ongacord",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
