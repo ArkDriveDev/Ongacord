@@ -49,7 +49,7 @@ const Menu: React.FC = () => {
             <IonButtons slot="start">
               <IonMenuButton style={h1Style} />
             </IonButtons>
-            <IonTitle style={{ color: 'skyblue' }}>Hologram App</IonTitle>
+            <IonTitle style={{ color: 'skyblue' }}>Ongacord</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonRouterOutlet>
