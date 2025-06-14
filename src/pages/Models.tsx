@@ -13,6 +13,7 @@ import JellyFish1 from '../images/JellyFish1.gif';
 import JellyFish2 from '../images/JellyFish2.gif';
 import JellyFish3 from '../images/JellyFish3.gif';
 import JellyFish4 from '../images/JellyFish4.gif';
+import ModelSearch from '../components/ModelsProps/ModelSearch';
 
 const Models: React.FC = () => {
   const history = useHistory();
@@ -38,6 +39,7 @@ const Models: React.FC = () => {
       
       {/* Added marginTop to push content down */}
       <IonContent style={{ marginTop: '30px' }}>
+        <ModelSearch/>
         <IonGrid style={{ paddingTop: '20px' }}>
           {Array.from({ length: Math.ceil(imageList.length / 4) }).map((_, rowIndex) => (
             <IonRow key={rowIndex}>
