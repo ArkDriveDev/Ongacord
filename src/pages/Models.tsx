@@ -4,8 +4,18 @@ import {
   IonButton
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import ModelSearch from '../components/ModelsProps/ModelSearch';
+
+// Import all images directly
+import Orb1 from '../images/Orb1.gif';
+import Orb2 from '../images/Orb2.gif';
+import Orb3 from '../images/Orb3.gif';
+import Orb4 from '../images/Orb4.gif';
+import JellyFish1 from '../images/JellyFish1.gif';
+import JellyFish2 from '../images/JellyFish2.gif';
+import JellyFish3 from '../images/JellyFish3.gif';
+import JellyFish4 from '../images/JellyFish4.gif';
 
 interface ImageData {
   id: number;
@@ -13,39 +23,20 @@ interface ImageData {
   src: string;
 }
 
-const APP_IMAGES = [
-  { filename: 'Orb1.gif', name: 'Orb 1' },
-  { filename: 'Orb2.gif', name: 'Orb 2' },
-  { filename: 'Orb3.gif', name: 'Orb 3' },
-  { filename: 'Orb4.gif', name: 'Orb 4' },
-  { filename: 'JellyFish1.gif', name: 'Jelly Fish 1' },
-  { filename: 'JellyFish2.gif', name: 'Jelly Fish 2' },
-  { filename: 'JellyFish3.gif', name: 'Jelly Fish 3' },
-  { filename: 'JellyFish4.gif', name: 'Jelly Fish 4' },
+const APP_IMAGES: ImageData[] = [
+  { id: 1, name: 'Orb 1', src: Orb1 },
+  { id: 2, name: 'Orb 2', src: Orb2 },
+  { id: 3, name: 'Orb 3', src: Orb3 },
+  { id: 4, name: 'Orb 4', src: Orb4 },
+  { id: 5, name: 'Jelly Fish 1', src: JellyFish1 },
+  { id: 6, name: 'Jelly Fish 2', src: JellyFish2 },
+  { id: 7, name: 'Jelly Fish 3', src: JellyFish3 },
+  { id: 8, name: 'Jelly Fish 4', src: JellyFish4 },
 ];
 
 const Models: React.FC = () => {
   const history = useHistory();
   const [searchQuery, setSearchQuery] = useState('');
-  const [images, setImages] = useState<ImageData[]>([]);
-
-  useEffect(() => {
-    const loadImages = async () => {
-      try {
-        const loadedImages = await Promise.all(
-          APP_IMAGES.map(async (img, index) => ({
-            id: index + 1,
-            name: img.name,
-            src: (await import(`../images/${img.filename}`)).default
-          }))
-        );
-        setImages(loadedImages);
-      } catch (error) {
-        console.error('Error loading images:', error);
-      }
-    };
-    loadImages();
-  }, []);
 
   const handleModelClick = (model: ImageData) => {
     history.push({
@@ -54,7 +45,7 @@ const Models: React.FC = () => {
     });
   };
 
-  const filteredImages = images.filter(image =>
+  const filteredImages = APP_IMAGES.filter(image =>
     image.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 

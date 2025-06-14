@@ -3,8 +3,9 @@ import {
   IonTitle, IonButtons, IonBackButton 
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Hologram.css';
+import Orb1 from '../images/Orb1.gif';
 
 interface ModelData {
   id: number;
@@ -19,47 +20,27 @@ interface LocationState {
 // Persistent selected model outside component
 let globalSelectedModel: ModelData | null = null;
 
+const DEFAULT_MODEL = {
+  id: 1,
+  name: 'Orb 1',
+  src: Orb1
+};
+
 const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
-  const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel);
-  const [defaultModel, setDefaultModel] = useState<ModelData | null>(null);
-
-  // Load the default model (Orb1) on component mount
-  useEffect(() => {
-    const loadDefaultModel = async () => {
-      try {
-        const orb1Src = (await import('../images/Orb1.gif')).default;
-        const defaultModel = {
-          id: 1,
-          name: 'Orb 1',
-          src: orb1Src
-        };
-        setDefaultModel(defaultModel);
-        
-        // If no model is selected yet, use the default
-        if (!globalSelectedModel) {
-          globalSelectedModel = defaultModel;
-          setSelectedModel(defaultModel);
-        }
-      } catch (error) {
-        console.error('Error loading default model:', error);
-      }
-    };
-
-    loadDefaultModel();
-  }, []);
+  const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
 
   // Update model when navigation state changes
   useEffect(() => {
     if (location.state?.model) {
       globalSelectedModel = location.state.model;
       setSelectedModel(location.state.model);
-    } else if (defaultModel && !globalSelectedModel) {
+    } else if (!globalSelectedModel) {
       // Only use default if no model was ever selected
-      globalSelectedModel = defaultModel;
-      setSelectedModel(defaultModel);
+      globalSelectedModel = DEFAULT_MODEL;
+      setSelectedModel(DEFAULT_MODEL);
     }
-  }, [location.state, defaultModel]);
+  }, [location.state]);
 
   const imageDistance = 100;
   const imageSize = 150;
@@ -123,4 +104,4 @@ const Hologram: React.FC = () => {
   );
 };
 
-export default Hologram;
+export default Hologram; 
