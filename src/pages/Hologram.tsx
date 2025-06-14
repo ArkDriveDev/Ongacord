@@ -31,15 +31,10 @@ const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
 
-  // Voice commands setup
+  // Voice Command Integration (ONLY ADDITION)
   useEffect(() => {
-    // Enable voice commands when component mounts
     VoiceCommands.enable();
-    
-    return () => {
-      // Cleanup - disable when component unmounts
-      VoiceCommands.disable();
-    };
+    return () => VoiceCommands.disable();
   }, []);
 
   // Update model when navigation state changes
@@ -52,9 +47,6 @@ const Hologram: React.FC = () => {
       setSelectedModel(DEFAULT_MODEL);
     }
   }, [location.state]);
-
-  const imageDistance = 100;
-  const imageSize = 150;
 
   if (!selectedModel) {
     return (
@@ -89,23 +81,17 @@ const Hologram: React.FC = () => {
 
       <IonContent fullscreen className="hologram-container">
         <div className="hologram-center">
-          <div 
-            className="reflection-base"
-            style={{
-              width: `${imageDistance * 2}px`,
-              height: `${imageDistance * 2}px`
-            }}
-          >
-            <div className="reflection-image top" style={{ width: imageSize, height: imageSize, top: `-${imageDistance}px` }}>
+          <div className="reflection-base">
+            <div className="reflection-image top">
               <img src={selectedModel.src} alt="Top" />
             </div>
-            <div className="reflection-image right" style={{ width: imageSize, height: imageSize, right: `-${imageDistance}px` }}>
+            <div className="reflection-image right">
               <img src={selectedModel.src} alt="Right" />
             </div>
-            <div className="reflection-image bottom" style={{ width: imageSize, height: imageSize, bottom: `-${imageDistance}px` }}>
+            <div className="reflection-image bottom">
               <img src={selectedModel.src} alt="Bottom" />
             </div>
-            <div className="reflection-image left" style={{ width: imageSize, height: imageSize, left: `-${imageDistance}px` }}>
+            <div className="reflection-image left">
               <img src={selectedModel.src} alt="Left" />
             </div>
           </div>
