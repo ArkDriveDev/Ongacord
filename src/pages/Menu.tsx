@@ -1,10 +1,10 @@
 import {
   IonButtons, IonContent, IonHeader, IonIcon, IonItem,
-  IonMenu, IonMenuButton, IonMenuToggle, IonPage, IonTitle, IonToolbar,
-  IonRouterOutlet
+  IonMenu, IonMenuButton, IonMenuToggle, IonPage, 
+  IonTitle, IonToolbar, IonRouterOutlet
 } from '@ionic/react';
 import { prismOutline, cubeOutline } from 'ionicons/icons';
-import { Route, Redirect } from 'react-router-dom';
+import { Route, Redirect, useLocation } from 'react-router-dom';
 import Hologram from './Hologram';
 import Models from './Models';
 
@@ -14,10 +14,9 @@ const Menu: React.FC = () => {
     filter: 'drop-shadow(0 0 8px white)',
   };
 
-  // Style for the reversed pyramid icon
   const reversedPyramidStyle = {
     ...glow,
-    transform: 'scaleY(-1)' // This flips the icon vertically
+    transform: 'scaleY(-1)'
   };
 
   const menuItems = [
@@ -65,10 +64,11 @@ const Menu: React.FC = () => {
             <IonTitle style={{ color: 'skyblue' }}>Ongacord</IonTitle>
           </IonToolbar>
         </IonHeader>
+        
         <IonRouterOutlet>
-          <Route path="/hologram" component={Hologram} exact />
-          <Route path="/models" component={Models} exact />
-          <Redirect exact from="/" to="/hologram" />
+          <Route exact path="/" render={() => <Redirect to="/models" />} />
+          <Route exact path="/hologram" component={Hologram} />
+          <Route exact path="/models" component={Models} />
         </IonRouterOutlet>
       </IonPage>
     </>
