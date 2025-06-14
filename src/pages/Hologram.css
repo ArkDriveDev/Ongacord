@@ -1,4 +1,4 @@
-/* Perfect Black Background */
+/* Solid Black Background */
 ion-content.hologram-container {
   --background: #000000;
   background: #000;
@@ -13,85 +13,84 @@ ion-content.hologram-container {
   overflow: hidden;
 }
 
-/* Centered Container - MAX Bottom Adjustment */
+/* Perfectly Centered Container */
 .hologram-center {
   position: relative;
-  width: 140vmin;
-  height: 140vmin;
-  max-width: 600px;
-  max-height: 600px;
-  margin: 70px 0 0 -35px; /* Increased to 70px down, -35px left */
-  transform: translateX(-5px);
+  width: 120vmin;
+  height: 120vmin;
+  max-width: 500px;
+  max-height: 500px;
+  margin: 25vh auto 0; /* 25vh pushes down from top */
+  transform: translateY(-10%); /* Fine-tunes vertical position */
 }
 
-/* Image Containers (Unchanged) */
+/* Image Containers */
 .reflection-image {
   position: absolute;
-  width: 20%;
-  height: 20%;
+  width: 22%;
+  height: 22%;
   display: flex;
   justify-content: center;
   align-items: center;
   background: transparent;
 }
 
-/* Image Styling (Unchanged) */
+/* Image Styling - No Effects */
 .reflection-image img {
   width: 80%;
   height: 80%;
   object-fit: contain;
-  filter: brightness(1.7);
 }
 
-/* Spacing Positions (Unchanged) */
+/* Positioning */
 .reflection-image.top {
-  top: 10%;
+  top: 12%;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .reflection-image.right {
   top: 50%;
-  right: 10%;
+  right: 12%;
   transform: translateY(-50%) rotate(90deg) scaleX(-1);
 }
 
 .reflection-image.bottom {
-  bottom: 10%;
+  bottom: 12%;
   left: 50%;
   transform: translateX(-50%) scaleY(-1);
 }
 
 .reflection-image.left {
   top: 50%;
-  left: 10%;
+  left: 12%;
   transform: translateY(-50%) rotate(270deg);
 }
 
-/* Mobile Responsiveness */
+/* Mobile Perfect Centering */
 @media (max-width: 768px) {
   .hologram-center {
-    width: 120vmin;
-    height: 120vmin;
-    margin: 60px 0 0 -30px; /* 60px down, -30px left */
-    transform: translateX(-8px);
+    width: 100vmin;
+    height: 100vmin;
+    margin: 30vh auto 0; /* More push down for mobile */
+    transform: translateY(-15%); /* Stronger adjustment for mobile */
   }
-  
+
   .reflection-image {
-    width: 22%;
-    height: 22%;
+    width: 24%;
+    height: 24%;
   }
   
   .reflection-image.top {
-    top: 12%;
+    top: 10%;
   }
   .reflection-image.right {
-    right: 12%;
+    right: 10%;
   }
   .reflection-image.bottom {
-    bottom: 12%;
+    bottom: 10%;
   }
   .reflection-image.left {
-    left: 12%;
+    left: 10%;
   }
 }
