@@ -31,11 +31,16 @@ const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
 
-  // Voice Command Integration (ONLY ADDITION)
-  useEffect(() => {
-    VoiceCommands.enable();
-    return () => VoiceCommands.disable();
-  }, []);
+ // In your Hologram component
+useEffect(() => {
+  const voiceCommands = VoiceCommands;
+  voiceCommands.enable();
+
+  return () => {
+    // Only shutdown when component unmounts
+    voiceCommands.shutdown();
+  };
+}, []);
 
   // Update model when navigation state changes
   useEffect(() => {

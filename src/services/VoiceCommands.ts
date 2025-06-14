@@ -8,6 +8,7 @@ class VoiceCommands {
   private isEnabled = false;
   private permissionGranted = false;
   private recognitionActive = false;
+  private mediaStream: MediaStream | null = null; // Store the stream
 
   private constructor() {
     this.haiSound = new Audio(haiMp3);
@@ -25,7 +26,7 @@ class VoiceCommands {
     if (this.isEnabled) return;
 
     try {
-      // Request permission only when enabling
+      // Request permission when enabling
       await this.requestMicrophonePermission();
       
       this.isEnabled = true;
@@ -50,6 +51,7 @@ class VoiceCommands {
 
   public disable(): void {
     this.voiceService.stopListening();
+    // Don't stop the media stream here to maintain permission
     this.isEnabled = false;
     this.recognitionActive = false;
   }
@@ -58,9 +60,8 @@ class VoiceCommands {
     if (this.permissionGranted) return;
     
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Immediately stop the stream - we just needed permission
-      stream.getTracks().forEach(track => track.stop());
+      // Keep a reference to the stream
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.permissionGranted = true;
     } catch (err) {
       console.error('Microphone access denied:', err);
@@ -80,6 +81,10 @@ class VoiceCommands {
 
   private cleanupOnError(): void {
     this.disable();
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
   }
 
   public get status() {
@@ -87,6 +92,16 @@ class VoiceCommands {
       isEnabled: this.isEnabled,
       permissionGranted: this.permissionGranted
     };
+  }
+
+  // Add a method to properly clean up when done
+  public async shutdown(): Promise<void> {
+    this.disable();
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
+    this.permissionGranted = false;
   }
 }
 
