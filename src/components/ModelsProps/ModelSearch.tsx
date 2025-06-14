@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { IonSearchbar } from '@ionic/react';
 
-const ModelSearch: React.FC = () => {
-  const [query, setQuery] = useState('');
+interface ModelSearchProps {
+  onSearch: (query: string) => void;
+}
+
+const ModelSearch: React.FC<ModelSearchProps> = ({ onSearch }) => {
+  const [query, setQuery] = React.useState('');
 
   const handleInput = (e: CustomEvent) => {
     const value = e.detail.value || '';
     setQuery(value);
-    console.log('Searching for:', value);
-
+    onSearch(value);
   };
 
   return (
     <IonSearchbar
-      style={{ width: '50%',  marginTop: '30px', display: 'block' }}
+      style={{ width: '50%', marginTop: '30px', display: 'block' }}
       value={query}
       onIonInput={handleInput}
       placeholder="Search Model..."
