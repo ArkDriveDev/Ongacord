@@ -13,14 +13,15 @@ ion-content.hologram-container {
   overflow: hidden;
 }
 
-/* Centered Container - Final Position Adjustment */
+/* Centered Container - MAX Left/Bottom Adjustment */
 .hologram-center {
   position: relative;
   width: 140vmin;
   height: 140vmin;
   max-width: 600px;
   max-height: 600px;
-  margin: 40px 0 0 -25px; /* Increased top to 40px, left to -25px */
+  margin: 50px 0 0 -35px; /* 50px down, -35px left */
+  transform: translateX(-5px); /* Extra nudge left */
 }
 
 /* Image Containers */
@@ -42,7 +43,7 @@ ion-content.hologram-container {
   filter: brightness(1.7);
 }
 
-/* Spacing Positions */
+/* Spacing Positions (Unchanged) */
 .reflection-image.top {
   top: 10%;
   left: 50%;
@@ -72,7 +73,8 @@ ion-content.hologram-container {
   .hologram-center {
     width: 120vmin;
     height: 120vmin;
-    margin: 35px 0 0 -20px; /* Increased top to 35px, left to -20px */
+    margin: 45px 0 0 -30px; /* 45px down, -30px left */
+    transform: translateX(-8px); /* Extra nudge left */
   }
   
   .reflection-image {
