@@ -11,7 +11,7 @@ class VoiceCommands {
 
   private setupCommands() {
     this.voiceService.startListening((command) => {
-      if (command.includes('onga')) {
+      if (command.includes('Hello')) {
         this.playHaiResponse();
       }
     });
