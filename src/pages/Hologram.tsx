@@ -1,6 +1,7 @@
 import { 
   IonContent, IonPage, IonHeader, IonToolbar, 
-  IonTitle, IonButtons, IonBackButton, IonButton
+  IonTitle, IonButtons, IonBackButton, IonButton,
+  IonToast
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
@@ -30,18 +31,54 @@ const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [showPermissionToast, setShowPermissionToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const voiceButtonRef = useRef<HTMLIonButtonElement>(null);
 
-  // Safe voice command integration
+  // Initialize voice commands and check permission status
   useEffect(() => {
-    if (isVoiceActive) {
-      VoiceCommands.enable(() => {
-        setIsVoiceActive(false); // Auto-disable after command
+    const checkPermission = async () => {
+      try {
+        // Check if we already have permission
+        await VoiceCommands.requestMicrophonePermission();
+        // If we get here, permission is granted
+        setToastMessage('Microphone access ready! Say "hello"');
+        setShowPermissionToast(true);
+      } catch (error) {
+        // Permission not granted yet, but don't show error - we'll ask when user clicks
+        console.log('Microphone permission not yet granted');
+      }
+    };
+
+    checkPermission();
+  }, []);
+
+  // Handle voice activation toggle
+  useEffect(() => {
+  const handleVoiceActivation = async () => {
+  if (isVoiceActive) {
+    try {
+      await VoiceCommands.enable(() => {
+        setIsVoiceActive(false);
       });
-    } else {
-      VoiceCommands.disable();
+      setToastMessage('Listening for commands... Say "hello"');
+      setShowPermissionToast(true);
+    } catch (error) {
+      setIsVoiceActive(false);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to enable voice commands';
+      setToastMessage(errorMessage);
+      setShowPermissionToast(true);
     }
-    return () => VoiceCommands.disable();
+  } else {
+    VoiceCommands.disable();
+  }
+};
+
+    handleVoiceActivation();
+
+    return () => {
+      VoiceCommands.disable();
+    };
   }, [isVoiceActive]);
 
   useEffect(() => {
@@ -55,8 +92,7 @@ const Hologram: React.FC = () => {
   }, [location.state]);
 
   const handleVoiceToggle = () => {
-    // Must be triggered by user gesture
-    setIsVoiceActive(!isVoiceActive);
+    setIsVoiceActive(prev => !prev);
   };
 
   if (!selectedModel) {
@@ -118,6 +154,14 @@ const Hologram: React.FC = () => {
           </div>
         </div>
       </IonContent>
+
+      <IonToast
+        isOpen={showPermissionToast}
+        onDidDismiss={() => setShowPermissionToast(false)}
+        message={toastMessage}
+        duration={3000}
+        position="top"
+      />
     </IonPage>
   );
 };
