@@ -8,11 +8,12 @@ const ModelSearch: React.FC = () => {
     const value = e.detail.value || '';
     setQuery(value);
     console.log('Searching for:', value);
-  
+
   };
 
   return (
     <IonSearchbar
+      style={{ width: '50%',  marginTop: '30px', display: 'block' }}
       value={query}
       onIonInput={handleInput}
       placeholder="Search Model..."
