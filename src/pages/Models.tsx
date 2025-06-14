@@ -13,74 +13,56 @@ interface ImageData {
   src: string;
 }
 
-// Predefined list of images (can be moved to a separate config file)
-const IMAGE_MANIFEST = [
-  { filename: 'Orb1.gif', displayName: 'Orb 1' },
-  { filename: 'Orb2.gif', displayName: 'Orb 2' },
-  { filename: 'Orb3.gif', displayName: 'Orb 3' },
-  { filename: 'Orb4.gif', displayName: 'Orb 4' },
-  { filename: 'JellyFish1.gif', displayName: 'Jelly Fish 1' },
-  { filename: 'JellyFish2.gif', displayName: 'Jelly Fish 2' },
-  { filename: 'JellyFish3.gif', displayName: 'Jelly Fish 3' },
-  { filename: 'JellyFish4.gif', displayName: 'Jelly Fish 4' },
+const APP_IMAGES = [
+  { filename: 'Orb1.gif', name: 'Orb 1' },
+  { filename: 'Orb2.gif', name: 'Orb 2' },
+  { filename: 'Orb3.gif', name: 'Orb 3' },
+  { filename: 'Orb4.gif', name: 'Orb 4' },
+  { filename: 'JellyFish1.gif', name: 'Jelly Fish 1' },
+  { filename: 'JellyFish2.gif', name: 'Jelly Fish 2' },
+  { filename: 'JellyFish3.gif', name: 'Jelly Fish 3' },
+  { filename: 'JellyFish4.gif', name: 'Jelly Fish 4' },
 ];
 
 const Models: React.FC = () => {
   const history = useHistory();
   const [searchQuery, setSearchQuery] = useState('');
-  const [allImages, setAllImages] = useState<ImageData[]>([]);
+  const [images, setImages] = useState<ImageData[]>([]);
 
   useEffect(() => {
     const loadImages = async () => {
       try {
         const loadedImages = await Promise.all(
-          IMAGE_MANIFEST.map(async (img, index) => {
-            try {
-              // Dynamically import each image
-              const src = (await import(`../images/${img.filename}`)).default;
-              return {
-                id: index + 1,
-                name: img.displayName,
-                src
-              };
-            } catch (error) {
-              console.error(`Error loading ${img.filename}:`, error);
-              return null;
-            }
-          })
+          APP_IMAGES.map(async (img, index) => ({
+            id: index + 1,
+            name: img.name,
+            src: (await import(`../images/${img.filename}`)).default
+          }))
         );
-        
-        setAllImages(loadedImages.filter(Boolean) as ImageData[]);
+        setImages(loadedImages);
       } catch (error) {
         console.error('Error loading images:', error);
       }
     };
-
     loadImages();
   }, []);
 
-  const filteredImages = allImages.filter(image =>
+  const handleModelClick = (model: ImageData) => {
+    history.push({
+      pathname: '/hologram',
+      state: { model }
+    });
+  };
+
+  const filteredImages = images.filter(image =>
     image.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleAddFromGallery = async () => {
-    // Your implementation for adding from gallery
-    const newImage = {
-      id: Date.now(),
-      name: `Custom ${allImages.length + 1}`,
-      src: 'path/to/uploaded/image' // Set this from your image picker
-    };
-    setAllImages(prev => [...prev, newImage]);
-  };
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
           <IonTitle>3D Models</IonTitle>
-          <IonButton slot="end" onClick={handleAddFromGallery}>
-            Add from Gallery
-          </IonButton>
         </IonToolbar>
       </IonHeader>
       
@@ -99,7 +81,7 @@ const Models: React.FC = () => {
                   <IonCol size="6" size-md="3" key={image.id}>
                     <IonCard 
                       button 
-                      onClick={() => history.push(`/model-detail/${image.id}`)}
+                      onClick={() => handleModelClick(image)}
                       style={{ 
                         height: '100%',
                         margin: '8px',
