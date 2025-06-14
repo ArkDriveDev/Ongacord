@@ -1,4 +1,4 @@
-/* Solid Black Background */
+/* Perfect Black Background */
 ion-content.hologram-container {
   --background: #000000;
   background: #000;
@@ -10,70 +10,86 @@ ion-content.hologram-container {
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
 }
 
-/* Centered Container - Pushed Lower */
+/* Centered Container - Adjusted position */
 .hologram-center {
   position: relative;
-  width: 90vw;
-  height: 90vw;
-  max-width: 400px;
-  max-height: 400px;
-  margin-top: 12vh; /* Increased from 5vh to 12vh */
+  width: 140vmin;
+  height: 140vmin;
+  max-width: 600px;
+  max-height: 600px;
+  margin: 30px 0 0 -15px; /* Top: 30px, Left: -15px */
 }
 
 /* Image Containers */
 .reflection-image {
   position: absolute;
-  width: 22%;
-  height: 22%;
+  width: 20%;
+  height: 20%;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: transparent;
 }
 
-/* Simple Image Styling */
+/* Image Styling - Glow removed */
 .reflection-image img {
-  width: 70%;
-  height: 70%;
+  width: 80%;
+  height: 80%;
   object-fit: contain;
+  filter: brightness(1.7); /* Only brightness remains */
 }
 
-/* Positioning */
+/* Spacing Positions */
 .reflection-image.top {
-  top: 15%;
+  top: 10%;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .reflection-image.right {
   top: 50%;
-  right: 15%;
+  right: 10%;
   transform: translateY(-50%) rotate(90deg) scaleX(-1);
 }
 
 .reflection-image.bottom {
-  bottom: 15%;
+  bottom: 10%;
   left: 50%;
   transform: translateX(-50%) scaleY(-1);
 }
 
 .reflection-image.left {
   top: 50%;
-  left: 15%;
+  left: 10%;
   transform: translateY(-50%) rotate(270deg);
 }
 
-/* Mobile Adjustments */
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
   .hologram-center {
-    width: 95vw;
-    height: 95vw;
-    margin-top: 15vh; /* Increased from 8vh to 15vh */
+    width: 120vmin;
+    height: 120vmin;
+    margin: 25px 0 0 -10px; /* Adjusted for mobile */
   }
   
   .reflection-image {
-    width: 24%;
-    height: 24%;
+    width: 22%;
+    height: 22%;
+  }
+  
+  .reflection-image.top {
+    top: 12%;
+  }
+  .reflection-image.right {
+    right: 12%;
+  }
+  .reflection-image.bottom {
+    bottom: 12%;
+  }
+  .reflection-image.left {
+    left: 12%;
   }
 }
