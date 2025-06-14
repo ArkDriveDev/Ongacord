@@ -11,7 +11,7 @@ class VoiceCommands {
 
   private setupCommands() {
     this.voiceService.startListening((command) => {
-      if (command.includes('Hello')) {
+      if (command.includes('hello')) {
         this.playHaiResponse();
       }
     });
