@@ -13,22 +13,22 @@ ion-content.hologram-container {
   overflow: hidden;
 }
 
-/* Centered Container - Adjusted for 2" spacing */
+/* Centered Container - 1 inch spacing */
 .hologram-center {
   position: relative;
-  width: 160vmin; /* Increased container size */
-  height: 160vmin;
-  max-width: 650px; /* Increased max size */
-  max-height: 650px;
+  width: 140vmin; /* Slightly reduced from 160vmin */
+  height: 140vmin;
+  max-width: 580px; /* Reduced from 650px */
+  max-height: 580px;
   margin: 25vh auto 0;
   transform: translateY(-10%);
 }
 
-/* Image Containers - Adjusted for spacing */
+/* Image Containers */
 .reflection-image {
   position: absolute;
-  width: 18%; /* Smaller containers = more space between */
-  height: 18%;
+  width: 20%; /* Increased from 18% */
+  height: 20%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -42,56 +42,55 @@ ion-content.hologram-container {
   object-fit: contain;
 }
 
-/* Positioning - Adjusted for 2" spacing */
+/* Positioning - 1 inch spacing */
 .reflection-image.top {
-  top: 8%; /* Moved further from center */
+  top: 10%; /* Brought closer than 8% */
   left: 50%;
   transform: translateX(-50%);
 }
 
 .reflection-image.right {
   top: 50%;
-  right: 8%; /* Moved further from center */
+  right: 10%;
   transform: translateY(-50%) rotate(90deg) scaleX(-1);
 }
 
 .reflection-image.bottom {
-  bottom: 8%; /* Moved further from center */
+  bottom: 10%;
   left: 50%;
   transform: translateX(-50%) scaleY(-1);
 }
 
 .reflection-image.left {
   top: 50%;
-  left: 8%; /* Moved further from center */
+  left: 10%;
   transform: translateY(-50%) rotate(270deg);
 }
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   .hologram-center {
-    width: 140vmin;
-    height: 140vmin;
+    width: 120vmin;
+    height: 120vmin;
     margin: 30vh auto 0;
     transform: translateY(-15%);
   }
 
   .reflection-image {
-    width: 20%; /* Slightly larger on mobile */
-    height: 20%;
+    width: 22%; /* Increased from 20% */
+    height: 22%;
   }
   
-  /* Slightly closer on mobile */
   .reflection-image.top {
-    top: 10%;
+    top: 12%; /* Brought closer than 10% */
   }
   .reflection-image.right {
-    right: 10%;
+    right: 12%;
   }
   .reflection-image.bottom {
-    bottom: 10%;
+    bottom: 12%;
   }
   .reflection-image.left {
-    left: 10%;
+    left: 12%;
   }
 }
