@@ -1,9 +1,9 @@
 import { 
   IonContent, IonPage, IonHeader, IonToolbar, 
-  IonTitle, IonButtons, IonBackButton 
+  IonTitle, IonButtons, IonBackButton, IonButton
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
 import VoiceCommands from '../services/VoiceCommands';
@@ -18,7 +18,6 @@ interface LocationState {
   model: ModelData;
 }
 
-// Persistent selected model outside component
 let globalSelectedModel: ModelData | null = null;
 
 const DEFAULT_MODEL = {
@@ -30,14 +29,21 @@ const DEFAULT_MODEL = {
 const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const voiceButtonRef = useRef<HTMLIonButtonElement>(null);
 
-  // Voice Command Integration (ONLY ADDITION)
+  // Safe voice command integration
   useEffect(() => {
-    VoiceCommands.enable();
+    if (isVoiceActive) {
+      VoiceCommands.enable(() => {
+        setIsVoiceActive(false); // Auto-disable after command
+      });
+    } else {
+      VoiceCommands.disable();
+    }
     return () => VoiceCommands.disable();
-  }, []);
+  }, [isVoiceActive]);
 
-  // Update model when navigation state changes
   useEffect(() => {
     if (location.state?.model) {
       globalSelectedModel = location.state.model;
@@ -47,6 +53,11 @@ const Hologram: React.FC = () => {
       setSelectedModel(DEFAULT_MODEL);
     }
   }, [location.state]);
+
+  const handleVoiceToggle = () => {
+    // Must be triggered by user gesture
+    setIsVoiceActive(!isVoiceActive);
+  };
 
   if (!selectedModel) {
     return (
@@ -76,6 +87,16 @@ const Hologram: React.FC = () => {
             <IonBackButton defaultHref="/models" text="Back" />
           </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
+          <IonButtons slot="end">
+            <IonButton 
+              ref={voiceButtonRef}
+              fill={isVoiceActive ? 'solid' : 'outline'}
+              color={isVoiceActive ? 'success' : 'medium'}
+              onClick={handleVoiceToggle}
+            >
+              {isVoiceActive ? '🎤 Listening...' : '🎤'}
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
