@@ -65,7 +65,7 @@ const Hologram: React.FC = () => {
     );
   }
 
-  return (
+   return (
     <IonPage style={{ backgroundColor: 'black' }}>
       <IonHeader>
         <IonToolbar>
@@ -78,23 +78,17 @@ const Hologram: React.FC = () => {
 
       <IonContent fullscreen className="hologram-container">
         <div className="hologram-center">
-          <div 
-            className="reflection-base"
-            style={{
-              width: `${imageDistance * 2}px`,
-              height: `${imageDistance * 2}px`
-            }}
-          >
-            <div className="reflection-image top" style={{ width: imageSize, height: imageSize, top: `-${imageDistance}px` }}>
+          <div className="reflection-base">
+            <div className="reflection-image top">
               <img src={selectedModel.src} alt="Top" />
             </div>
-            <div className="reflection-image right" style={{ width: imageSize, height: imageSize, right: `-${imageDistance}px` }}>
+            <div className="reflection-image right">
               <img src={selectedModel.src} alt="Right" />
             </div>
-            <div className="reflection-image bottom" style={{ width: imageSize, height: imageSize, bottom: `-${imageDistance}px` }}>
+            <div className="reflection-image bottom">
               <img src={selectedModel.src} alt="Bottom" />
             </div>
-            <div className="reflection-image left" style={{ width: imageSize, height: imageSize, left: `-${imageDistance}px` }}>
+            <div className="reflection-image left">
               <img src={selectedModel.src} alt="Left" />
             </div>
           </div>
@@ -104,4 +98,4 @@ const Hologram: React.FC = () => {
   );
 };
 
-export default Hologram; 
+export default Hologram;
