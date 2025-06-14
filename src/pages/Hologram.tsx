@@ -1,10 +1,9 @@
 import { 
   IonContent, IonPage, IonHeader, IonToolbar, 
-  IonTitle, IonButtons, IonBackButton, IonButton,
-  IonToast
+  IonTitle, IonButtons, IonBackButton 
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
 import VoiceCommands from '../services/VoiceCommands';
@@ -19,6 +18,7 @@ interface LocationState {
   model: ModelData;
 }
 
+// Persistent selected model outside component
 let globalSelectedModel: ModelData | null = null;
 
 const DEFAULT_MODEL = {
@@ -30,57 +30,14 @@ const DEFAULT_MODEL = {
 const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
-  const [showPermissionToast, setShowPermissionToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const voiceButtonRef = useRef<HTMLIonButtonElement>(null);
 
-  // Initialize voice commands and check permission status
+  // Voice Command Integration (ONLY ADDITION)
   useEffect(() => {
-    const checkPermission = async () => {
-      try {
-        // Check if we already have permission
-        await VoiceCommands.requestMicrophonePermission();
-        // If we get here, permission is granted
-        setToastMessage('Microphone access ready! Say "hello"');
-        setShowPermissionToast(true);
-      } catch (error) {
-        // Permission not granted yet, but don't show error - we'll ask when user clicks
-        console.log('Microphone permission not yet granted');
-      }
-    };
-
-    checkPermission();
+    VoiceCommands.enable();
+    return () => VoiceCommands.disable();
   }, []);
 
-  // Handle voice activation toggle
-  useEffect(() => {
-  const handleVoiceActivation = async () => {
-  if (isVoiceActive) {
-    try {
-      await VoiceCommands.enable(() => {
-        setIsVoiceActive(false);
-      });
-      setToastMessage('Listening for commands... Say "hello"');
-      setShowPermissionToast(true);
-    } catch (error) {
-      setIsVoiceActive(false);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to enable voice commands';
-      setToastMessage(errorMessage);
-      setShowPermissionToast(true);
-    }
-  } else {
-    VoiceCommands.disable();
-  }
-};
-
-    handleVoiceActivation();
-
-    return () => {
-      VoiceCommands.disable();
-    };
-  }, [isVoiceActive]);
-
+  // Update model when navigation state changes
   useEffect(() => {
     if (location.state?.model) {
       globalSelectedModel = location.state.model;
@@ -90,10 +47,6 @@ const Hologram: React.FC = () => {
       setSelectedModel(DEFAULT_MODEL);
     }
   }, [location.state]);
-
-  const handleVoiceToggle = () => {
-    setIsVoiceActive(prev => !prev);
-  };
 
   if (!selectedModel) {
     return (
@@ -123,16 +76,6 @@ const Hologram: React.FC = () => {
             <IonBackButton defaultHref="/models" text="Back" />
           </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
-          <IonButtons slot="end">
-            <IonButton 
-              ref={voiceButtonRef}
-              fill={isVoiceActive ? 'solid' : 'outline'}
-              color={isVoiceActive ? 'success' : 'medium'}
-              onClick={handleVoiceToggle}
-            >
-              {isVoiceActive ? '🎤 Listening...' : '🎤'}
-            </IonButton>
-          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
@@ -154,14 +97,6 @@ const Hologram: React.FC = () => {
           </div>
         </div>
       </IonContent>
-
-      <IonToast
-        isOpen={showPermissionToast}
-        onDidDismiss={() => setShowPermissionToast(false)}
-        message={toastMessage}
-        duration={3000}
-        position="top"
-      />
     </IonPage>
   );
 };

@@ -12,7 +12,6 @@ class VoiceCommands {
   private constructor() {
     this.haiSound = new Audio(haiMp3);
     this.haiSound.preload = 'auto';
-    this.setupAudioErrorHandling();
   }
 
   public static getInstance(): VoiceCommands {
@@ -22,18 +21,12 @@ class VoiceCommands {
     return VoiceCommands.instance;
   }
 
-  private setupAudioErrorHandling(): void {
-    this.haiSound.addEventListener('error', (e) => {
-      console.error('Audio error:', e);
-      throw new Error('Audio file failed to load');
-    });
-  }
-
   public async enable(onComplete?: () => void): Promise<void> {
     if (this.isEnabled) return;
 
     try {
-      await this.ensureMicrophonePermission();
+      // Request permission only when enabling
+      await this.requestMicrophonePermission();
       
       this.isEnabled = true;
       this.recognitionActive = true;
@@ -41,9 +34,7 @@ class VoiceCommands {
       this.voiceService.startListening((command) => {
         if (!this.recognitionActive) return;
         
-        console.log('Voice command detected:', command);
         const normalizedCmd = command.toLowerCase().trim();
-        
         if (normalizedCmd.includes('hello')) {
           this.playHaiResponse().finally(() => {
             this.recognitionActive = false;
@@ -58,8 +49,6 @@ class VoiceCommands {
   }
 
   public disable(): void {
-    if (!this.isEnabled) return;
-    
     this.voiceService.stopListening();
     this.isEnabled = false;
     this.recognitionActive = false;
@@ -69,30 +58,13 @@ class VoiceCommands {
     if (this.permissionGranted) return;
     
     try {
-      // Modern permission API (works in Chrome)
-      if (navigator.permissions) {
-        const permission = await navigator.permissions.query({ 
-          name: 'microphone' as any 
-        });
-        
-        if (permission.state === 'denied') {
-          throw new Error('Microphone permission blocked. Please enable in browser settings.');
-        }
-      }
-
-      // Legacy getUserMedia check (works in all browsers)
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Immediately stop the stream - we just needed permission
       stream.getTracks().forEach(track => track.stop());
       this.permissionGranted = true;
     } catch (err) {
       console.error('Microphone access denied:', err);
-      throw new Error('Microphone access is required for voice commands. Please allow microphone access.');
-    }
-  }
-
-  private async ensureMicrophonePermission(): Promise<void> {
-    if (!this.permissionGranted) {
-      await this.requestMicrophonePermission();
+      throw new Error('Please allow microphone access to use voice commands');
     }
   }
 
@@ -107,12 +79,10 @@ class VoiceCommands {
   }
 
   private cleanupOnError(): void {
-    this.isEnabled = false;
-    this.recognitionActive = false;
-    this.voiceService.stopListening();
+    this.disable();
   }
 
-  public get status(): { isEnabled: boolean; permissionGranted: boolean } {
+  public get status() {
     return {
       isEnabled: this.isEnabled,
       permissionGranted: this.permissionGranted
@@ -120,5 +90,4 @@ class VoiceCommands {
   }
 }
 
-// Export a singleton instance
 export default VoiceCommands.getInstance();
