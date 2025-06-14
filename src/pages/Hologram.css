@@ -13,74 +13,75 @@ ion-content.hologram-container {
   overflow: hidden;
 }
 
-/* Perfectly Centered Container */
+/* Centered Container - Adjusted for 2" spacing */
 .hologram-center {
   position: relative;
-  width: 120vmin;
-  height: 120vmin;
-  max-width: 500px;
-  max-height: 500px;
-  margin: 25vh auto 0; /* 25vh pushes down from top */
-  transform: translateY(-10%); /* Fine-tunes vertical position */
+  width: 160vmin; /* Increased container size */
+  height: 160vmin;
+  max-width: 650px; /* Increased max size */
+  max-height: 650px;
+  margin: 25vh auto 0;
+  transform: translateY(-10%);
 }
 
-/* Image Containers */
+/* Image Containers - Adjusted for spacing */
 .reflection-image {
   position: absolute;
-  width: 22%;
-  height: 22%;
+  width: 18%; /* Smaller containers = more space between */
+  height: 18%;
   display: flex;
   justify-content: center;
   align-items: center;
   background: transparent;
 }
 
-/* Image Styling - No Effects */
+/* Image Styling */
 .reflection-image img {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-/* Positioning */
+/* Positioning - Adjusted for 2" spacing */
 .reflection-image.top {
-  top: 12%;
+  top: 8%; /* Moved further from center */
   left: 50%;
   transform: translateX(-50%);
 }
 
 .reflection-image.right {
   top: 50%;
-  right: 12%;
+  right: 8%; /* Moved further from center */
   transform: translateY(-50%) rotate(90deg) scaleX(-1);
 }
 
 .reflection-image.bottom {
-  bottom: 12%;
+  bottom: 8%; /* Moved further from center */
   left: 50%;
   transform: translateX(-50%) scaleY(-1);
 }
 
 .reflection-image.left {
   top: 50%;
-  left: 12%;
+  left: 8%; /* Moved further from center */
   transform: translateY(-50%) rotate(270deg);
 }
 
-/* Mobile Perfect Centering */
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
   .hologram-center {
-    width: 100vmin;
-    height: 100vmin;
-    margin: 30vh auto 0; /* More push down for mobile */
-    transform: translateY(-15%); /* Stronger adjustment for mobile */
+    width: 140vmin;
+    height: 140vmin;
+    margin: 30vh auto 0;
+    transform: translateY(-15%);
   }
 
   .reflection-image {
-    width: 24%;
-    height: 24%;
+    width: 20%; /* Slightly larger on mobile */
+    height: 20%;
   }
   
+  /* Slightly closer on mobile */
   .reflection-image.top {
     top: 10%;
   }
