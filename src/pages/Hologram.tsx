@@ -8,8 +8,12 @@ const Hologram: React.FC = () => {
   const imageSize = 150;     // Image width/height
 
   return (
-    <IonPage>
-      <IonContent fullscreen className="hologram-container">
+    <IonPage style={{ backgroundColor: 'black' }}>
+      <IonContent 
+        fullscreen 
+        className="hologram-container"
+        style={{ '--background': '#000000' }}
+      >
         {/* Centered container */}
         <div className="hologram-center">
           {/* Base layout */}
