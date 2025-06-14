@@ -13,18 +13,18 @@ ion-content.hologram-container {
   overflow: hidden;
 }
 
-/* Centered Container - MAX Left/Bottom Adjustment */
+/* Centered Container - MAX Bottom Adjustment */
 .hologram-center {
   position: relative;
   width: 140vmin;
   height: 140vmin;
   max-width: 600px;
   max-height: 600px;
-  margin: 50px 0 0 -35px; /* 50px down, -35px left */
-  transform: translateX(-5px); /* Extra nudge left */
+  margin: 70px 0 0 -35px; /* Increased to 70px down, -35px left */
+  transform: translateX(-5px);
 }
 
-/* Image Containers */
+/* Image Containers (Unchanged) */
 .reflection-image {
   position: absolute;
   width: 20%;
@@ -35,7 +35,7 @@ ion-content.hologram-container {
   background: transparent;
 }
 
-/* Image Styling - No Glow */
+/* Image Styling (Unchanged) */
 .reflection-image img {
   width: 80%;
   height: 80%;
@@ -73,8 +73,8 @@ ion-content.hologram-container {
   .hologram-center {
     width: 120vmin;
     height: 120vmin;
-    margin: 45px 0 0 -30px; /* 45px down, -30px left */
-    transform: translateX(-8px); /* Extra nudge left */
+    margin: 60px 0 0 -30px; /* 60px down, -30px left */
+    transform: translateX(-8px);
   }
   
   .reflection-image {
