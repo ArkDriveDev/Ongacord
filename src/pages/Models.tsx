@@ -1,50 +1,90 @@
 import { 
-  IonContent, IonHeader, IonPage, IonTitle, IonToolbar, 
-  IonGrid, IonRow, IonCol, IonCard, IonCardContent, IonImg 
+  IonContent, IonHeader, IonPage, IonTitle, IonToolbar,
+  IonGrid, IonRow, IonCol, IonCard, IonCardContent, IonImg,
+  IonButton
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ModelSearch from '../components/ModelsProps/ModelSearch';
 
-// Import your images
-import Orb1 from '../images/Orb1.gif';
-import Orb2 from '../images/Orb2.gif';
-import Orb3 from '../images/Orb3.gif';
-import Orb4 from '../images/Orb4.gif';
-import JellyFish1 from '../images/JellyFish1.gif';
-import JellyFish2 from '../images/JellyFish2.gif';
-import JellyFish3 from '../images/JellyFish3.gif';
-import JellyFish4 from '../images/JellyFish4.gif';
+interface ImageData {
+  id: number;
+  name: string;
+  src: string;
+}
+
+// Predefined list of images (can be moved to a separate config file)
+const IMAGE_MANIFEST = [
+  { filename: 'Orb1.gif', displayName: 'Orb 1' },
+  { filename: 'Orb2.gif', displayName: 'Orb 2' },
+  { filename: 'Orb3.gif', displayName: 'Orb 3' },
+  { filename: 'Orb4.gif', displayName: 'Orb 4' },
+  { filename: 'JellyFish1.gif', displayName: 'Jelly Fish 1' },
+  { filename: 'JellyFish2.gif', displayName: 'Jelly Fish 2' },
+  { filename: 'JellyFish3.gif', displayName: 'Jelly Fish 3' },
+  { filename: 'JellyFish4.gif', displayName: 'Jelly Fish 4' },
+];
 
 const Models: React.FC = () => {
   const history = useHistory();
   const [searchQuery, setSearchQuery] = useState('');
+  const [allImages, setAllImages] = useState<ImageData[]>([]);
 
-  const allImages = [
-    { id: 1, src: Orb1, name: 'Orb 1' },
-    { id: 2, src: Orb2, name: 'Orb 2' },
-    { id: 3, src: Orb3, name: 'Orb 3' },
-    { id: 4, src: Orb4, name: 'Orb 4' },
-    { id: 5, src: JellyFish1, name: 'JellyFish 1' },
-    { id: 6, src: JellyFish2, name: 'JellyFish 2' },
-    { id: 7, src: JellyFish3, name: 'JellyFish 3' },
-    { id: 8, src: JellyFish4, name: 'JellyFish 4' },
-  ];
+  useEffect(() => {
+    const loadImages = async () => {
+      try {
+        const loadedImages = await Promise.all(
+          IMAGE_MANIFEST.map(async (img, index) => {
+            try {
+              // Dynamically import each image
+              const src = (await import(`../images/${img.filename}`)).default;
+              return {
+                id: index + 1,
+                name: img.displayName,
+                src
+              };
+            } catch (error) {
+              console.error(`Error loading ${img.filename}:`, error);
+              return null;
+            }
+          })
+        );
+        
+        setAllImages(loadedImages.filter(Boolean) as ImageData[]);
+      } catch (error) {
+        console.error('Error loading images:', error);
+      }
+    };
 
-  const filteredImages = allImages.filter(image => 
+    loadImages();
+  }, []);
+
+  const filteredImages = allImages.filter(image =>
     image.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleAddFromGallery = async () => {
+    // Your implementation for adding from gallery
+    const newImage = {
+      id: Date.now(),
+      name: `Custom ${allImages.length + 1}`,
+      src: 'path/to/uploaded/image' // Set this from your image picker
+    };
+    setAllImages(prev => [...prev, newImage]);
+  };
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
           <IonTitle>3D Models</IonTitle>
+          <IonButton slot="end" onClick={handleAddFromGallery}>
+            Add from Gallery
+          </IonButton>
         </IonToolbar>
       </IonHeader>
       
       <IonContent>
-        {/* Search bar with your original styling */}
         <ModelSearch onSearch={setSearchQuery} />
         
         <IonGrid style={{ paddingTop: '20px' }}>
