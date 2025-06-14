@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
+import VoiceCommands from '../services/VoiceCommands';
 
 interface ModelData {
   id: number;
@@ -30,13 +31,23 @@ const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
 
+  // Voice commands setup
+  useEffect(() => {
+    // Enable voice commands when component mounts
+    VoiceCommands.enable();
+    
+    return () => {
+      // Cleanup - disable when component unmounts
+      VoiceCommands.disable();
+    };
+  }, []);
+
   // Update model when navigation state changes
   useEffect(() => {
     if (location.state?.model) {
       globalSelectedModel = location.state.model;
       setSelectedModel(location.state.model);
     } else if (!globalSelectedModel) {
-      // Only use default if no model was ever selected
       globalSelectedModel = DEFAULT_MODEL;
       setSelectedModel(DEFAULT_MODEL);
     }
@@ -65,7 +76,7 @@ const Hologram: React.FC = () => {
     );
   }
 
-   return (
+  return (
     <IonPage style={{ backgroundColor: 'black' }}>
       <IonHeader>
         <IonToolbar>
@@ -78,17 +89,23 @@ const Hologram: React.FC = () => {
 
       <IonContent fullscreen className="hologram-container">
         <div className="hologram-center">
-          <div className="reflection-base">
-            <div className="reflection-image top">
+          <div 
+            className="reflection-base"
+            style={{
+              width: `${imageDistance * 2}px`,
+              height: `${imageDistance * 2}px`
+            }}
+          >
+            <div className="reflection-image top" style={{ width: imageSize, height: imageSize, top: `-${imageDistance}px` }}>
               <img src={selectedModel.src} alt="Top" />
             </div>
-            <div className="reflection-image right">
+            <div className="reflection-image right" style={{ width: imageSize, height: imageSize, right: `-${imageDistance}px` }}>
               <img src={selectedModel.src} alt="Right" />
             </div>
-            <div className="reflection-image bottom">
+            <div className="reflection-image bottom" style={{ width: imageSize, height: imageSize, bottom: `-${imageDistance}px` }}>
               <img src={selectedModel.src} alt="Bottom" />
             </div>
-            <div className="reflection-image left">
+            <div className="reflection-image left" style={{ width: imageSize, height: imageSize, left: `-${imageDistance}px` }}>
               <img src={selectedModel.src} alt="Left" />
             </div>
           </div>
