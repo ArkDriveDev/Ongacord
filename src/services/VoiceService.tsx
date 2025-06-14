@@ -1,8 +1,13 @@
 class VoiceService {
   private recognition: SpeechRecognition | null = null;
   private isListening = false;
+  private resultCallback: ((command: string) => void) | null = null;
 
   constructor() {
+    this.initializeRecognition();
+  }
+
+  private initializeRecognition() {
     const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       console.error("Speech Recognition not supported");
@@ -10,37 +15,46 @@ class VoiceService {
     }
 
     this.recognition = new SpeechRecognition();
-    this.recognition.continuous = false;
+    this.recognition.continuous = true; // Changed to continuous mode
     this.recognition.interimResults = false;
     this.recognition.lang = "en-US";
 
-    // Handle permission denial
+    // Event handlers
+    this.recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+      console.log("Recognized:", transcript); // Debug log
+      if (this.resultCallback) {
+        this.resultCallback(transcript);
+      }
+    };
+
     this.recognition.onerror = (event) => {
       const errorEvent = event as SpeechRecognitionErrorEvent;
-      if (errorEvent.error === "not-allowed") {
-        console.error("Microphone access denied by user or browser");
-      }
+      console.error("Recognition error:", errorEvent.error);
       this.stopListening();
+    };
+
+    this.recognition.onend = () => {
+      console.log("Recognition ended"); // Debug log
+      if (this.isListening) {
+        // Auto-restart if still in listening mode
+        this.recognition?.start();
+      }
     };
   }
 
-  // ✅ Only call this AFTER user interaction (e.g., button click)
   async startListening(onResult: (command: string) => void): Promise<void> {
     if (!this.recognition || this.isListening) return;
 
     try {
-      // First ensure mic permissions
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Check microphone permission
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop()); // Release immediately
       
-      this.recognition.start();
+      this.resultCallback = onResult;
       this.isListening = true;
-
-      this.recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.trim().toLowerCase();
-        onResult(transcript);
-        this.stopListening();
-      };
-
+      this.recognition.start();
+      console.log("Started listening"); // Debug log
     } catch (err) {
       console.error("Microphone access failed:", err);
       throw new Error("MICROPHONE_ACCESS_DENIED");
@@ -49,8 +63,10 @@ class VoiceService {
 
   stopListening() {
     if (this.recognition && this.isListening) {
-      this.recognition.stop();
       this.isListening = false;
+      this.recognition.stop();
+      this.resultCallback = null;
+      console.log("Stopped listening"); // Debug log
     }
   }
 }
