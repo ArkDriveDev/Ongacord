@@ -1,82 +1,109 @@
-/* Fullscreen black background */
+/* Set the entire page background to black */
+ion-content.hologram-container {
+  --background: #000000;
+  --ion-background-color: #000000;
+}
+
+/* Main container styling */
 .hologram-container {
-  background: #000;
-  height: 100vh;
-  width: 100vw;
+  background: #000000;
+  height: 100%;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
   position: relative;
-  padding: 0;
-  margin: 0;
+  overflow: hidden;
 }
 
-/* Main centering wrapper - THIS IS THE KEY FIX */
+/* Centered hologram with increased spacing */
 .hologram-center {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 80vmin;
-  height: 80vmin;
-  max-width: 300px;
-  max-height: 300px;
+  width: 85vmin;
+  height: 85vmin;
+  max-width: 350px;
+  max-height: 350px;
 }
 
-/* Base container */
+/* Base container for the hologram effect */
 .reflection-base {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-/* Reflection images */
+/* Individual hologram elements with more space between them */
 .reflection-image {
   position: absolute;
-  width: 40%;
-  height: 40%;
+  width: 32%; /* Smaller size creates more space between images */
+  height: 32%;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
+/* Image styling with enhanced glow */
 .reflection-image img {
   width: 70%;
   height: 70%;
   object-fit: contain;
-  filter: brightness(1.3) drop-shadow(0 0 8px cyan);
+  filter: 
+    brightness(1.4)
+    drop-shadow(0 0 8px rgba(0, 255, 255, 0.7))
+    drop-shadow(0 0 15px rgba(0, 200, 255, 0.4));
 }
 
-/* Specific positions */
+/* Position adjustments for each image */
 .reflection-image.top {
-  top: 0;
+  top: 8%;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .reflection-image.right {
   top: 50%;
-  right: 0;
+  right: 8%;
   transform: translateY(-50%) rotate(90deg) scaleX(-1);
 }
 
 .reflection-image.bottom {
-  bottom: 0;
+  bottom: 8%;
   left: 50%;
   transform: translateX(-50%) scaleY(-1);
 }
 
 .reflection-image.left {
   top: 50%;
-  left: 0;
+  left: 8%;
   transform: translateY(-50%) rotate(270deg);
 }
 
-/* Mobile adjustments */
+/* Mobile responsiveness */
 @media (max-width: 768px) {
   .hologram-center {
-    width: 90vmin;
-    height: 90vmin;
+    width: 95vmin;
+    height: 95vmin;
+  }
+  
+  .reflection-image {
+    width: 30%;
+    height: 30%;
+  }
+  
+  /* Slightly adjust positions for mobile */
+  .reflection-image.top {
+    top: 6%;
+  }
+  .reflection-image.right {
+    right: 6%;
+  }
+  .reflection-image.bottom {
+    bottom: 6%;
+  }
+  .reflection-image.left {
+    left: 6%;
   }
 }
