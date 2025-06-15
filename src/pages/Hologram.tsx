@@ -19,7 +19,6 @@ interface LocationState {
   model: ModelData;
 }
 
-// Persistent selected model outside component
 let globalSelectedModel: ModelData | null = null;
 
 const DEFAULT_MODEL = {
@@ -32,46 +31,31 @@ const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const navigation = useIonRouter();
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
-  const [rotationAngle, setRotationAngle] = useState(0);
-  const [scale, setScale] = useState(1);
+  const [isVoiceActive, setIsVoiceActive] = useState(true); // Auto-activate by default
 
-  // Handle voice commands
   const handleVoiceCommand = (command: string) => {
-    // First process general commands
     CommandList(command, navigation);
     
-    // Then process hologram-specific commands
-    if (command.includes('rotate')) {
-      const newAngle = rotationAngle + 45;
-      setRotationAngle(newAngle);
+    // Example hologram commands
+    if (command.includes('hello hologram')) {
+      alert('Hologram system responding!');
     }
-    else if (command.includes('spin')) {
-      setRotationAngle(prev => prev + 180);
-    }
-    else if (command.includes('zoom in') || command.includes('larger')) {
-      setScale(prev => Math.min(prev + 0.2, 2.5));
-    }
-    else if (command.includes('zoom out') || command.includes('smaller')) {
-      setScale(prev => Math.max(prev - 0.2, 0.5));
-    }
-    else if (command.includes('reset')) {
-      setRotationAngle(0);
-      setScale(1);
+    if (command.includes('show orb')) {
+      // You could add navigation logic here
     }
   };
 
-  // Toggle voice control
-  const toggleVoiceControl = () => {
-    if (isVoiceActive) {
+  // Auto-start voice control on mount
+  useEffect(() => {
+    VoiceService.startListening(handleVoiceCommand);
+    setIsVoiceActive(true);
+    
+    return () => {
       VoiceService.stopListening();
-    } else {
-      VoiceService.startListening(handleVoiceCommand);
-    }
-    setIsVoiceActive(!isVoiceActive);
-  };
+    };
+  }, []);
 
-  // Update model when navigation state changes
+  // Handle model changes
   useEffect(() => {
     if (location.state?.model) {
       globalSelectedModel = location.state.model;
@@ -80,11 +64,6 @@ const Hologram: React.FC = () => {
       globalSelectedModel = DEFAULT_MODEL;
       setSelectedModel(DEFAULT_MODEL);
     }
-    
-    // Clean up voice recognition on unmount
-    return () => {
-      VoiceService.stopListening();
-    };
   }, [location.state]);
 
   if (!selectedModel) {
@@ -107,12 +86,6 @@ const Hologram: React.FC = () => {
     );
   }
 
-  // Apply rotation and scale transforms
-  const imageStyle = {
-    transform: `rotate(${rotationAngle}deg) scale(${scale})`,
-    transition: 'transform 0.3s ease'
-  };
-
   return (
     <IonPage style={{ backgroundColor: 'black' }}>
       <IonHeader>
@@ -121,66 +94,46 @@ const Hologram: React.FC = () => {
             <IonBackButton defaultHref="/models" text="Back" />
           </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
-          <IonButtons slot="end">
-            <button 
-              onClick={toggleVoiceControl}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: isVoiceActive ? '#4CAF50' : 'white',
-                fontSize: '24px',
-                padding: '10px',
-                cursor: 'pointer'
-              }}
-              aria-label={isVoiceActive ? 'Stop listening' : 'Start listening'}
-            >
-              🎤
-            </button>
-          </IonButtons>
+          {/* Status indicator only */}
+          <div slot="end" style={{ 
+            color: isVoiceActive ? '#4CAF50' : '#ccc',
+            padding: '0 16px',
+            fontSize: '0.8rem'
+          }}>
+            {isVoiceActive ? 'Voice Active' : 'Voice Off'}
+          </div>
         </IonToolbar>
       </IonHeader>
 
       <IonContent fullscreen className="hologram-container">
+        {/* Your original hologram display - completely unchanged */}
         <div className="hologram-center">
           <div className="reflection-base">
-            <div className="reflection-image top" style={imageStyle}>
+            <div className="reflection-image top">
               <img src={selectedModel.src} alt="Top" />
             </div>
-            <div className="reflection-image right" style={imageStyle}>
+            <div className="reflection-image right">
               <img src={selectedModel.src} alt="Right" />
             </div>
-            <div className="reflection-image bottom" style={imageStyle}>
+            <div className="reflection-image bottom">
               <img src={selectedModel.src} alt="Bottom" />
             </div>
-            <div className="reflection-image left" style={imageStyle}>
+            <div className="reflection-image left">
               <img src={selectedModel.src} alt="Left" />
             </div>
           </div>
         </div>
 
+        {/* Minimal voice status indicator */}
         {isVoiceActive && (
           <div style={{
             position: 'fixed',
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            color: 'white',
-            padding: '10px 20px',
-            borderRadius: '20px',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
+            bottom: '10px',
+            right: '10px',
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '0.7rem'
           }}>
-            <div style={{
-              width: '10px',
-              height: '10px',
-              backgroundColor: '#ff3b30',
-              borderRadius: '50%',
-              animation: 'pulse 1.5s infinite'
-            }}></div>
-            Listening...
+            ● Listening for commands
           </div>
         )}
       </IonContent>
