@@ -6,51 +6,45 @@ class VoiceService {
       const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
         this.recognition = new SpeechRecognition();
-        this.recognition.continuous = false; // Stop after one command
-        this.recognition.interimResults = false; // Only final results
-        this.recognition.lang = "en-US"; // Set language
+        this.recognition.continuous = true; // Changed to true for continuous listening
+        this.recognition.interimResults = false;
+        this.recognition.lang = "en-US";
       } else {
-        alert("Speech Recognition not supported in this browser.");
+        console.error("Speech Recognition not supported in this browser.");
       }
     }
   
-    // Start listening for voice commands
     startListening(onResult: (command: string) => void) {
       if (this.recognition && !this.isListening) {
         this.recognition.start();
         this.isListening = true;
   
         this.recognition.onresult = (event: SpeechRecognitionEvent) => {
-          const transcript = event.results[0][0].transcript.trim().toLowerCase();
+          const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
           onResult(transcript);
-          this.stopListening();
+          // Don't stop listening here!
         };
   
         this.recognition.onerror = (event: Event) => {
-          const errorEvent = event as SpeechRecognitionErrorEvent;
-          console.error("Speech recognition error:", errorEvent.error);
-        
-          if (errorEvent.error === "network") {
-            alert("Network error: Please check your internet connection and try again.");
-          } else {
-            alert(`Error: ${errorEvent.error}`);
-          }
-        
+          console.error("Speech recognition error:", (event as SpeechRecognitionErrorEvent).error);
           this.stopListening();
         };
+        
         this.recognition.onend = () => {
-          this.isListening = false;
+          // Automatically restart listening if it ended unexpectedly
+          if (this.isListening) {
+            this.recognition?.start();
+          }
         };
       }
     }
   
-    // Stop listening
     stopListening() {
       if (this.recognition && this.isListening) {
-        this.recognition.stop();
         this.isListening = false;
+        this.recognition.stop();
       }
     }
-  }
+}
   
-  export default new VoiceService();
+export default new VoiceService();

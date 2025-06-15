@@ -31,8 +31,9 @@ const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const navigation = useIonRouter();
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [isVoiceActive, setIsVoiceActive] = useState(true);
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const haiSound = useRef(new Audio('../Responses/CuteResponse/hai.mp3'));
 
   // Initialize audio settings
@@ -41,46 +42,55 @@ const Hologram: React.FC = () => {
     haiSound.current.preload = 'auto';
   }, []);
 
-  const handleVoiceCommand = (command: string) => {
-    CommandList(command, navigation);
-    
-    if (command.includes('hello hologram')) {
-      playHaiSound();
-    }
-    if (command.includes('show orb')) {
-      // Add navigation logic here if needed
-    }
-  };
-
   const playHaiSound = () => {
+    haiSound.current.currentTime = 0; // Rewind in case it's already playing
     haiSound.current.play()
       .catch(error => console.error("Error playing hai sound:", error));
   };
 
-  // Initialize voice service and play welcome sound
+  const handleVoiceCommand = (command: string) => {
+    if (!command) return;
+    
+    setIsProcessing(true);
+    CommandList(command, navigation);
+    
+    // Special hologram commands
+    if (command.includes('hello hologram')) {
+      playHaiSound();
+    }
+    
+    // Ready for next command after short delay
+    setTimeout(() => {
+      setIsProcessing(false);
+    }, 1500);
+  };
+
+  // Initialize voice service
   useEffect(() => {
     const initializeVoice = async () => {
       try {
-        await VoiceService.startListening(handleVoiceCommand);
+        VoiceService.startListening(handleVoiceCommand);
         setIsVoiceActive(true);
         setPermissionGranted(true);
         
         // Play welcome sound after slight delay
         setTimeout(() => {
           playHaiSound();
-        }, 300);
+        }, 500);
       } catch (error) {
         console.error("Voice initialization failed:", error);
         setIsVoiceActive(false);
       }
     };
 
-    initializeVoice();
+    if (isVoiceActive) {
+      initializeVoice();
+    }
 
     return () => {
       VoiceService.stopListening();
     };
-  }, []);
+  }, [isVoiceActive]);
 
   // Handle model changes
   useEffect(() => {
@@ -124,9 +134,20 @@ const Hologram: React.FC = () => {
           <div slot="end" style={{ 
             color: isVoiceActive ? '#4CAF50' : '#ccc',
             padding: '0 16px',
-            fontSize: '0.8rem'
+            fontSize: '0.8rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}>
-            {isVoiceActive ? 'Voice Active' : 'Voice Off'}
+            <div style={{
+              width: '10px',
+              height: '10px',
+              backgroundColor: isVoiceActive ? 
+                (isProcessing ? '#FFC107' : '#4CAF50') : '#ccc',
+              borderRadius: '50%',
+              animation: isVoiceActive ? 'pulse 1.5s infinite' : 'none'
+            }}></div>
+            {isVoiceActive ? (isProcessing ? 'Processing...' : 'Listening') : 'Voice Off'}
           </div>
         </IonToolbar>
       </IonHeader>
@@ -149,29 +170,18 @@ const Hologram: React.FC = () => {
           </div>
         </div>
 
-        {isVoiceActive && (
-          <div style={{
-            position: 'fixed',
-            bottom: '10px',
-            right: '10px',
-            color: 'rgba(255,255,255,0.7)',
-            fontSize: '0.7rem'
-          }}>
-            ● Listening for commands
-          </div>
-        )}
-
         {!permissionGranted && (
           <div style={{
             position: 'fixed',
-            bottom: '60px',
+            bottom: '20px',
             left: '50%',
             transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(0,0,0,0.7)',
+            backgroundColor: 'rgba(0,0,0,0.8)',
             color: 'white',
             padding: '10px 20px',
             borderRadius: '20px',
-            zIndex: 1000
+            zIndex: 1000,
+            textAlign: 'center'
           }}>
             Allow microphone access to enable voice commands
           </div>
