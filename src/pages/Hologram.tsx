@@ -3,7 +3,7 @@ import {
   IonTitle, IonButtons, IonBackButton, useIonRouter
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
 import VoiceService from '../services/VoiceService';
@@ -31,25 +31,52 @@ const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const navigation = useIonRouter();
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
-  const [isVoiceActive, setIsVoiceActive] = useState(true); // Auto-activate by default
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const haiSound = useRef(new Audio('../Responses/CuteResponse/hai.mp3'));
+
+  // Initialize audio settings
+  useEffect(() => {
+    haiSound.current.volume = 0.8;
+    haiSound.current.preload = 'auto';
+  }, []);
 
   const handleVoiceCommand = (command: string) => {
     CommandList(command, navigation);
     
-    // Example hologram commands
     if (command.includes('hello hologram')) {
-      alert('Hologram system responding!');
+      playHaiSound();
     }
     if (command.includes('show orb')) {
-      // You could add navigation logic here
+      // Add navigation logic here if needed
     }
   };
 
-  // Auto-start voice control on mount
+  const playHaiSound = () => {
+    haiSound.current.play()
+      .catch(error => console.error("Error playing hai sound:", error));
+  };
+
+  // Initialize voice service and play welcome sound
   useEffect(() => {
-    VoiceService.startListening(handleVoiceCommand);
-    setIsVoiceActive(true);
-    
+    const initializeVoice = async () => {
+      try {
+        await VoiceService.startListening(handleVoiceCommand);
+        setIsVoiceActive(true);
+        setPermissionGranted(true);
+        
+        // Play welcome sound after slight delay
+        setTimeout(() => {
+          playHaiSound();
+        }, 300);
+      } catch (error) {
+        console.error("Voice initialization failed:", error);
+        setIsVoiceActive(false);
+      }
+    };
+
+    initializeVoice();
+
     return () => {
       VoiceService.stopListening();
     };
@@ -94,7 +121,6 @@ const Hologram: React.FC = () => {
             <IonBackButton defaultHref="/models" text="Back" />
           </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
-          {/* Status indicator only */}
           <div slot="end" style={{ 
             color: isVoiceActive ? '#4CAF50' : '#ccc',
             padding: '0 16px',
@@ -106,7 +132,6 @@ const Hologram: React.FC = () => {
       </IonHeader>
 
       <IonContent fullscreen className="hologram-container">
-        {/* Your original hologram display - completely unchanged */}
         <div className="hologram-center">
           <div className="reflection-base">
             <div className="reflection-image top">
@@ -124,7 +149,6 @@ const Hologram: React.FC = () => {
           </div>
         </div>
 
-        {/* Minimal voice status indicator */}
         {isVoiceActive && (
           <div style={{
             position: 'fixed',
@@ -134,6 +158,22 @@ const Hologram: React.FC = () => {
             fontSize: '0.7rem'
           }}>
             ● Listening for commands
+          </div>
+        )}
+
+        {!permissionGranted && (
+          <div style={{
+            position: 'fixed',
+            bottom: '60px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: '20px',
+            zIndex: 1000
+          }}>
+            Allow microphone access to enable voice commands
           </div>
         )}
       </IonContent>
