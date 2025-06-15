@@ -4,7 +4,7 @@ import {
   IonButton, IonIcon
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { micOutline, micOffOutline } from 'ionicons/icons';
 import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
@@ -30,28 +30,35 @@ const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const [selectedModel, setSelectedModel] = useState<ModelData>(DEFAULT_MODEL);
   const [micActive, setMicActive] = useState(false);
+  const initializedRef = useRef(false);
+
+  // Play hello1.mp3 on first load
+  useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      VoiceCommands.playResponse('default').catch(console.error);
+    }
+  }, []);
 
   // Handle voice command toggle
-  const toggleVoiceCommands = () => {
-    if (micActive) {
-      VoiceCommands.disable();
-    } else {
-      VoiceCommands.enable();
+  const toggleVoiceCommands = async () => {
+    try {
+      if (micActive) {
+        VoiceCommands.stop();
+      } else {
+        await VoiceCommands.start();
+      }
+      setMicActive(!micActive);
+    } catch (error) {
+      console.error("Voice command error:", error);
+      setMicActive(false);
     }
-    setMicActive(!micActive);
   };
 
-  // Initialize voice commands on Windows load
+  // Cleanup on unmount
   useEffect(() => {
-    // Add slight delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      VoiceCommands.enable();
-      setMicActive(true);
-    }, 500);
-
     return () => {
-      clearTimeout(timer);
-      VoiceCommands.disable();
+      VoiceCommands.stop();
     };
   }, []);
 

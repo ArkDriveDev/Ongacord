@@ -8,41 +8,51 @@ class VoiceCommands {
     hello: new Audio(haiMp3),
     default: new Audio(helloMp3)
   };
+  private isActive = false;
 
   constructor() {
-    // Preload all audio files
     Object.values(this.responses).forEach(audio => {
       audio.preload = 'auto';
     });
   }
 
-  start() {
-    this.voiceService.startListening((command) => {
-      this.handleCommand(command);
-    });
-  }
-
-  stop() {
-    this.voiceService.stopListening();
-  }
-
-  private async handleCommand(command: string) {
+  async start(): Promise<void> {
+    if (this.isActive) return;
+    
     try {
-      if (command.includes("hello")) {
-        await this.playResponse('hello');
-      } 
-     else {
-        await this.playResponse('default');
-      }
+      await this.voiceService.startListening(this.handleCommand.bind(this));
+      this.isActive = true;
+      console.log("VoiceCommands started");
     } catch (error) {
-      console.error("Audio playback failed:", error);
+      console.error("Failed to start:", error);
+      throw error;
     }
   }
 
-  private async playResponse(type: keyof typeof this.responses) {
-    const audio = this.responses[type];
-    audio.currentTime = 0; // Rewind if already played
-    await audio.play();
+  stop(): void {
+    if (!this.isActive) return;
+    this.voiceService.stopListening();
+    this.isActive = false;
+    console.log("VoiceCommands stopped");
+  }
+
+  async playResponse(type: 'hello' | 'default'): Promise<void> {
+    try {
+      const audio = this.responses[type];
+      audio.currentTime = 0;
+      await audio.play();
+    } catch (error) {
+      console.error("Playback failed:", error);
+    }
+  }
+
+  private handleCommand(command: string): void {
+    const normalized = command.toLowerCase().trim();
+    if (normalized.includes("hello")) {
+      this.playResponse('hello');
+    } else {
+      this.playResponse('default');
+    }
   }
 }
 
