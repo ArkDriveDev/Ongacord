@@ -3,7 +3,7 @@ import {
   IonTitle, IonButtons, IonBackButton, useIonRouter
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
 import VoiceService from '../services/VoiceService';
@@ -34,19 +34,19 @@ const Hologram: React.FC = () => {
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const synthRef = useRef<SpeechSynthesis | null>(null);
+  const voiceActiveRef = useRef(isVoiceActive);
+
+  // Update ref when state changes
+  useEffect(() => {
+    voiceActiveRef.current = isVoiceActive;
+  }, [isVoiceActive]);
 
   // Initialize speech synthesis
   useEffect(() => {
     synthRef.current = window.speechSynthesis;
-    
-    // Speak welcome message
-    const speakWelcome = () => {
-      if (synthRef.current) {
-        const utterance = new SpeechSynthesisUtterance("Hello! I'm ready to help!");
-        utterance.rate = 0.9;
-        utterance.pitch = 1.2;
-        synthRef.current.speak(utterance);
-      }
+
+    const speakWelcome = async () => {
+      await speakResponse("Hello! I'm ready to help!");
     };
 
     speakWelcome();
@@ -55,22 +55,37 @@ const Hologram: React.FC = () => {
       if (synthRef.current) {
         synthRef.current.cancel();
       }
+      VoiceService.stopListening();
     };
   }, []);
 
-  const speakResponse = (text: string) => {
-    if (synthRef.current) {
+  const speakResponse = useCallback(async (text: string) => {
+    if (!synthRef.current) return;
+
+    return new Promise<void>((resolve) => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 0.9;
       utterance.pitch = 1.2;
-      synthRef.current.speak(utterance);
-    }
-  };
+      
+      utterance.onend = () => {
+        VoiceService.setSpeakingState(false);
+        resolve();
+      };
+      
+      utterance.onerror = () => {
+        VoiceService.setSpeakingState(false);
+        resolve();
+      };
 
-  const handleVoiceCommand = (command: string) => {
-    // Process all commands through CommandList
-    CommandList(command, navigation, speakResponse);
-  };
+      VoiceService.setSpeakingState(true);
+      synthRef.current?.speak(utterance);
+    });
+  }, []);
+
+  const handleVoiceCommand = useCallback(async (command: string) => {
+    console.log("Processing command:", command);
+    await CommandList(command, navigation, speakResponse);
+  }, [navigation, speakResponse]);
 
   // Initialize voice service
   useEffect(() => {
@@ -79,9 +94,18 @@ const Hologram: React.FC = () => {
         await VoiceService.startListening(handleVoiceCommand);
         setIsVoiceActive(true);
         setPermissionGranted(true);
-        speakResponse("Hello! I'm listening!");
+        await speakResponse("Hello! I'm listening!");
       } catch (error) {
         console.error("Voice initialization failed:", error);
+        setIsVoiceActive(false);
+        setPermissionGranted(false);
+        
+        // Try again after failure
+        setTimeout(() => {
+          if (voiceActiveRef.current) {
+            initializeVoice();
+          }
+        }, 2000);
       }
     };
 
@@ -90,7 +114,7 @@ const Hologram: React.FC = () => {
     return () => {
       VoiceService.stopListening();
     };
-  }, []);
+  }, [handleVoiceCommand]);
 
   // Handle model changes
   useEffect(() => {
@@ -172,7 +196,7 @@ const Hologram: React.FC = () => {
             zIndex: 1000,
             textAlign: 'center'
           }}>
-            Microphone access required for voice
+            Microphone access required for voice commands
           </div>
         )}
       </IonContent>
