@@ -8,7 +8,6 @@ import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
 import VoiceService from '../services/VoiceService';
 import CommandList from '../services/CommandList';
-import hai from '../Responses/CuteResponse/hai.mp3';
 
 interface ModelData {
   id: number;
@@ -34,44 +33,43 @@ const Hologram: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const haiSound = useRef<HTMLAudioElement | null>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
 
-  // Initialize and manage hai sound
+  // Initialize speech synthesis
   useEffect(() => {
-    haiSound.current = new Audio(hai);
-    haiSound.current.volume = 0.8;
-    haiSound.current.preload = 'auto';
-
-    // First play attempt on load
-    const tryPlay = () => {
-      if (haiSound.current) {
-        haiSound.current.currentTime = 0;
-        haiSound.current.play()
-          .then(() => console.log("hai.mp3 played on load"))
-          .catch(e => console.log("Initial play blocked:", e));
+    synthRef.current = window.speechSynthesis;
+    
+    // Speak welcome message
+    const speakWelcome = () => {
+      if (synthRef.current) {
+        const utterance = new SpeechSynthesisUtterance("Hello! I'm ready to help!");
+        utterance.rate = 0.9;
+        utterance.pitch = 1.2;
+        synthRef.current.speak(utterance);
       }
     };
 
-    tryPlay();
+    speakWelcome();
 
     return () => {
-      if (haiSound.current) {
-        haiSound.current.pause();
-        haiSound.current = null;
+      if (synthRef.current) {
+        synthRef.current.cancel();
       }
     };
   }, []);
 
-  const playHaiSound = () => {
-    if (haiSound.current) {
-      haiSound.current.currentTime = 0;
-      haiSound.current.play().catch(e => console.error("Hai sound error:", e));
+  const speakResponse = (text: string) => {
+    if (synthRef.current) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1.2;
+      synthRef.current.speak(utterance);
     }
   };
 
   const handleVoiceCommand = (command: string) => {
     // Process all commands through CommandList
-    CommandList(command, navigation);
+    CommandList(command, navigation, speakResponse);
   };
 
   // Initialize voice service
@@ -81,7 +79,7 @@ const Hologram: React.FC = () => {
         await VoiceService.startListening(handleVoiceCommand);
         setIsVoiceActive(true);
         setPermissionGranted(true);
-        playHaiSound(); // Play after permission
+        speakResponse("Hello! I'm listening!");
       } catch (error) {
         console.error("Voice initialization failed:", error);
       }
