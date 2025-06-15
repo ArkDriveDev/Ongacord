@@ -1,13 +1,14 @@
-import { 
-  IonContent, IonPage, IonHeader, IonToolbar, 
+import {
+  IonContent, IonPage, IonHeader, IonToolbar,
   IonTitle, IonButtons, IonBackButton, useIonRouter
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
 import VoiceService from '../services/VoiceService';
 import CommandList from '../services/CommandList';
+import hai from '../Responses/CuteResponse/hai.mp3';
 
 interface ModelData {
   id: number;
@@ -33,79 +34,51 @@ const Hologram: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const synthRef = useRef<SpeechSynthesis | null>(null);
-  const voiceActiveRef = useRef(isVoiceActive);
+  const haiSound = useRef<HTMLAudioElement | null>(null);
 
-  // Update ref when state changes
+  // Initialize hai.mp3 sound
   useEffect(() => {
-    voiceActiveRef.current = isVoiceActive;
-  }, [isVoiceActive]);
-
-  // Initialize speech synthesis
-  useEffect(() => {
-    synthRef.current = window.speechSynthesis;
-
-    const speakWelcome = async () => {
-      await speakResponse("Hello! I'm ready to help!");
-    };
-
-    speakWelcome();
+    haiSound.current = new Audio(hai);
+    haiSound.current.volume = 0.8;
+    haiSound.current.preload = 'auto';
 
     return () => {
-      if (synthRef.current) {
-        synthRef.current.cancel();
+      if (haiSound.current) {
+        haiSound.current.pause();
+        haiSound.current = null;
       }
-      VoiceService.stopListening();
     };
   }, []);
 
-  const speakResponse = useCallback(async (text: string) => {
-    if (!synthRef.current) return;
+  const playHaiSound = () => {
+    if (haiSound.current) {
+      haiSound.current.currentTime = 0;
+      haiSound.current.play().catch(e => console.error("Hai sound error:", e));
+    }
+  };
 
-    return new Promise<void>((resolve) => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1.2;
-      
-      utterance.onend = () => {
-        VoiceService.setSpeakingState(false);
-        resolve();
-      };
-      
-      utterance.onerror = () => {
-        VoiceService.setSpeakingState(false);
-        resolve();
-      };
+  const handleVoiceCommand = (command: string) => {
+    CommandList(command, navigation); // Play sound & handle command
+  };
 
-      VoiceService.setSpeakingState(true);
-      synthRef.current?.speak(utterance);
-    });
-  }, []);
-
-  const handleVoiceCommand = useCallback(async (command: string) => {
-    console.log("Processing command:", command);
-    await CommandList(command, navigation, speakResponse);
-  }, [navigation, speakResponse]);
-
-  // Initialize voice service
+  // ✅ Main voice + mic init
   useEffect(() => {
     const initializeVoice = async () => {
       try {
-        await VoiceService.startListening(handleVoiceCommand);
+        // 1. Request microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop()); // Immediately stop the mic
+
+        setPermissionGranted(true); // Show permission granted
+        playHaiSound(); // ✅ Play hai.mp3 safely
+
+        // 2. Start voice recognition
+        VoiceService.startListening(handleVoiceCommand);
         setIsVoiceActive(true);
-        setPermissionGranted(true);
-        await speakResponse("Hello! I'm listening!");
+
       } catch (error) {
         console.error("Voice initialization failed:", error);
-        setIsVoiceActive(false);
         setPermissionGranted(false);
-        
-        // Try again after failure
-        setTimeout(() => {
-          if (voiceActiveRef.current) {
-            initializeVoice();
-          }
-        }, 2000);
       }
     };
 
@@ -114,9 +87,9 @@ const Hologram: React.FC = () => {
     return () => {
       VoiceService.stopListening();
     };
-  }, [handleVoiceCommand]);
+  }, []);
 
-  // Handle model changes
+  // Handle selected model from navigation
   useEffect(() => {
     if (location.state?.model) {
       globalSelectedModel = location.state.model;
@@ -155,7 +128,7 @@ const Hologram: React.FC = () => {
             <IonBackButton defaultHref="/models" text="Back" />
           </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
-          <div slot="end" style={{ 
+          <div slot="end" style={{
             color: isVoiceActive ? '#4CAF50' : '#ccc',
             padding: '0 16px',
             fontSize: '0.8rem'
@@ -196,7 +169,7 @@ const Hologram: React.FC = () => {
             zIndex: 1000,
             textAlign: 'center'
           }}>
-            Microphone access required for voice commands
+            Microphone access required for voice
           </div>
         )}
       </IonContent>
