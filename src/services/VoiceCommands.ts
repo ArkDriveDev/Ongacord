@@ -1,62 +1,70 @@
-import VoiceService from './VoiceService';
-import hello1Mp3 from '../Responses/CuteResponse/hello1.mp3'; // Feedback sound
-import haiMp3 from '../Responses/CuteResponse/hai.mp3';
-
-class VoiceCommands {
-  private voiceService = VoiceService;
-  private haiSound = new Audio(haiMp3);
-  private feedbackSound = new Audio(hello1Mp3); // Audio to confirm listening
-  private isEnabled = false;
+class VoiceService {
+  private recognition: SpeechRecognition | null = null;
+  private isListening = false;
+  private resultCallback: ((command: string) => void) | null = null;
 
   constructor() {
-    this.haiSound.preload = 'auto';
-    this.feedbackSound.preload = 'auto';
+    this.initializeRecognition();
   }
 
-  public async enable(): Promise<void> {
-    if (this.isEnabled) return;
+  private initializeRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.error("Speech Recognition not supported");
+      return;
+    }
+
+    this.recognition = new SpeechRecognition();
+    this.recognition.continuous = true; // Keep listening
+    this.recognition.interimResults = false;
+    this.recognition.lang = "en-US";
+
+    this.recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+      console.log("Heard:", transcript); // Debug log
+      this.resultCallback?.(transcript);
+    };
+
+    this.recognition.onerror = (event) => {
+      const errorEvent = event as SpeechRecognitionErrorEvent;
+      console.error("Recognition error:", errorEvent.error);
+      this.stopListening();
+    };
+
+    this.recognition.onend = () => {
+      console.log("Recognition session ended");
+      if (this.isListening) {
+        this.recognition?.start(); // Auto-restart
+      }
+    };
+  }
+
+  async startListening(onResult: (command: string) => void): Promise<void> {
+    if (!this.recognition || this.isListening) return;
 
     try {
-      // 1. First request mic permission explicitly
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Verify mic access
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop()); // Release mic
       
-      // 2. Play feedback sound to confirm listening
-      await this.playFeedback();
-      
-      // 3. Start listening with command handler
-      this.voiceService.startListening((command) => {
-        const normalizedCmd = command.toLowerCase().trim();
-        if (normalizedCmd.includes('hello')) {
-          this.playHaiResponse();
-        }
-      });
-      
-      this.isEnabled = true;
+      this.resultCallback = onResult;
+      this.isListening = true;
+      this.recognition.start();
+      console.log("Started listening");
     } catch (err) {
-      console.error("VoiceCommands failed:", err);
-      this.disable();
+      console.error("Mic access failed:", err);
+      throw err;
     }
   }
 
-  public disable(): void {
-    this.voiceService.stopListening();
-    this.isEnabled = false;
-  }
-
-  private async playFeedback(): Promise<void> {
-    try {
-      this.feedbackSound.currentTime = 0;
-      await this.feedbackSound.play();
-    } catch (err) {
-      console.error("Feedback sound error:", err);
+  stopListening() {
+    if (this.recognition && this.isListening) {
+      this.isListening = false;
+      this.recognition.stop();
+      this.resultCallback = null;
+      console.log("Stopped listening");
     }
-  }
-
-  private playHaiResponse(): void {
-    this.haiSound.currentTime = 0;
-    this.haiSound.play().catch(e => console.error("Hai sound error:", e));
   }
 }
 
-// Singleton instance
-export default new VoiceCommands();
+export default new VoiceService();
