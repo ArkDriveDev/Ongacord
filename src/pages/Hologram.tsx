@@ -8,6 +8,7 @@ import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
 import VoiceService from '../services/VoiceService';
 import CommandList from '../services/CommandList';
+import hai from '../Responses/CuteResponse/hai.mp3';
 
 interface ModelData {
   id: number;
@@ -31,66 +32,67 @@ const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const navigation = useIonRouter();
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
-  const [isVoiceActive, setIsVoiceActive] = useState(true);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const haiSound = useRef(new Audio('../Responses/CuteResponse/hai.mp3'));
+  const haiSound = useRef<HTMLAudioElement | null>(null);
 
-  // Initialize audio settings
+  // Initialize and manage hai sound
   useEffect(() => {
+    haiSound.current = new Audio(hai);
     haiSound.current.volume = 0.8;
     haiSound.current.preload = 'auto';
+
+    // First play attempt on load
+    const tryPlay = () => {
+      if (haiSound.current) {
+        haiSound.current.currentTime = 0;
+        haiSound.current.play()
+          .then(() => console.log("hai.mp3 played on load"))
+          .catch(e => console.log("Initial play blocked:", e));
+      }
+    };
+
+    tryPlay();
+
+    return () => {
+      if (haiSound.current) {
+        haiSound.current.pause();
+        haiSound.current = null;
+      }
+    };
   }, []);
 
   const playHaiSound = () => {
-    haiSound.current.currentTime = 0; // Rewind in case it's already playing
-    haiSound.current.play()
-      .catch(error => console.error("Error playing hai sound:", error));
+    if (haiSound.current) {
+      haiSound.current.currentTime = 0;
+      haiSound.current.play().catch(e => console.error("Hai sound error:", e));
+    }
   };
 
   const handleVoiceCommand = (command: string) => {
-    if (!command) return;
-    
-    setIsProcessing(true);
+    // Process all commands through CommandList
     CommandList(command, navigation);
-    
-    // Special hologram commands
-    if (command.includes('hello hologram')) {
-      playHaiSound();
-    }
-    
-    // Ready for next command after short delay
-    setTimeout(() => {
-      setIsProcessing(false);
-    }, 1500);
   };
 
   // Initialize voice service
   useEffect(() => {
     const initializeVoice = async () => {
       try {
-        VoiceService.startListening(handleVoiceCommand);
+        await VoiceService.startListening(handleVoiceCommand);
         setIsVoiceActive(true);
         setPermissionGranted(true);
-        
-        // Play welcome sound after slight delay
-        setTimeout(() => {
-          playHaiSound();
-        }, 500);
+        playHaiSound(); // Play after permission
       } catch (error) {
         console.error("Voice initialization failed:", error);
-        setIsVoiceActive(false);
       }
     };
 
-    if (isVoiceActive) {
-      initializeVoice();
-    }
+    initializeVoice();
 
     return () => {
       VoiceService.stopListening();
     };
-  }, [isVoiceActive]);
+  }, []);
 
   // Handle model changes
   useEffect(() => {
@@ -134,20 +136,9 @@ const Hologram: React.FC = () => {
           <div slot="end" style={{ 
             color: isVoiceActive ? '#4CAF50' : '#ccc',
             padding: '0 16px',
-            fontSize: '0.8rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
+            fontSize: '0.8rem'
           }}>
-            <div style={{
-              width: '10px',
-              height: '10px',
-              backgroundColor: isVoiceActive ? 
-                (isProcessing ? '#FFC107' : '#4CAF50') : '#ccc',
-              borderRadius: '50%',
-              animation: isVoiceActive ? 'pulse 1.5s infinite' : 'none'
-            }}></div>
-            {isVoiceActive ? (isProcessing ? 'Processing...' : 'Listening') : 'Voice Off'}
+            {isVoiceActive ? 'Active' : 'Off'}
           </div>
         </IonToolbar>
       </IonHeader>
@@ -183,7 +174,7 @@ const Hologram: React.FC = () => {
             zIndex: 1000,
             textAlign: 'center'
           }}>
-            Allow microphone access to enable voice commands
+            Microphone access required for voice
           </div>
         )}
       </IonContent>
