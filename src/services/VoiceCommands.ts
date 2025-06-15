@@ -1,70 +1,58 @@
-class VoiceService {
-  private recognition: SpeechRecognition | null = null;
-  private isListening = false;
-  private resultCallback: ((command: string) => void) | null = null;
+import VoiceService from './VoiceService';
+import helloMp3 from '../Responses/CuteResponse/hello1.mp3';
+import haiMp3 from '../Responses/CuteResponse/hai.mp3';
+import aboutMp3 from '../Responses/CuteResponse/about.mp3'; // Add your about response
+import timeMp3 from '../Responses/CuteResponse/time.mp3'; // Add your time response
+
+class VoiceCommands {
+  private voiceService = VoiceService;
+  private responses = {
+    hello: new Audio(haiMp3),
+    about: new Audio(aboutMp3),
+    time: new Audio(timeMp3),
+    default: new Audio(helloMp3)
+  };
 
   constructor() {
-    this.initializeRecognition();
+    // Preload all audio files
+    Object.values(this.responses).forEach(audio => {
+      audio.preload = 'auto';
+    });
   }
 
-  private initializeRecognition() {
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.error("Speech Recognition not supported");
-      return;
-    }
-
-    this.recognition = new SpeechRecognition();
-    this.recognition.continuous = true; // Keep listening
-    this.recognition.interimResults = false;
-    this.recognition.lang = "en-US";
-
-    this.recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-      console.log("Heard:", transcript); // Debug log
-      this.resultCallback?.(transcript);
-    };
-
-    this.recognition.onerror = (event) => {
-      const errorEvent = event as SpeechRecognitionErrorEvent;
-      console.error("Recognition error:", errorEvent.error);
-      this.stopListening();
-    };
-
-    this.recognition.onend = () => {
-      console.log("Recognition session ended");
-      if (this.isListening) {
-        this.recognition?.start(); // Auto-restart
-      }
-    };
+  start() {
+    this.voiceService.startListening((command) => {
+      this.handleCommand(command);
+    });
   }
 
-  async startListening(onResult: (command: string) => void): Promise<void> {
-    if (!this.recognition || this.isListening) return;
+  stop() {
+    this.voiceService.stopListening();
+  }
 
+  private async handleCommand(command: string) {
     try {
-      // Verify mic access
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop()); // Release mic
-      
-      this.resultCallback = onResult;
-      this.isListening = true;
-      this.recognition.start();
-      console.log("Started listening");
-    } catch (err) {
-      console.error("Mic access failed:", err);
-      throw err;
+      if (command.includes("hello")) {
+        await this.playResponse('hello');
+      } 
+      else if (command.includes("about")) { 
+        await this.playResponse('about');
+      }
+      else if (command.includes("time")) {
+        await this.playResponse('time');
+      } else {
+        await this.playResponse('default');
+      }
+    } catch (error) {
+      console.error("Audio playback failed:", error);
     }
   }
 
-  stopListening() {
-    if (this.recognition && this.isListening) {
-      this.isListening = false;
-      this.recognition.stop();
-      this.resultCallback = null;
-      console.log("Stopped listening");
-    }
+  private async playResponse(type: keyof typeof this.responses) {
+    const audio = this.responses[type];
+    audio.currentTime = 0; // Rewind if already played
+    await audio.play();
   }
 }
 
-export default new VoiceService();
+export default new VoiceCommands();
