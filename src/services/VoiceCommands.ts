@@ -1,15 +1,11 @@
 import VoiceService from './VoiceService';
 import helloMp3 from '../Responses/CuteResponse/hello1.mp3';
 import haiMp3 from '../Responses/CuteResponse/hai.mp3';
-import aboutMp3 from '../Responses/CuteResponse/about.mp3'; // Add your about response
-import timeMp3 from '../Responses/CuteResponse/time.mp3'; // Add your time response
 
 class VoiceCommands {
   private voiceService = VoiceService;
   private responses = {
     hello: new Audio(haiMp3),
-    about: new Audio(aboutMp3),
-    time: new Audio(timeMp3),
     default: new Audio(helloMp3)
   };
 
@@ -35,12 +31,7 @@ class VoiceCommands {
       if (command.includes("hello")) {
         await this.playResponse('hello');
       } 
-      else if (command.includes("about")) { 
-        await this.playResponse('about');
-      }
-      else if (command.includes("time")) {
-        await this.playResponse('time');
-      } else {
+     else {
         await this.playResponse('default');
       }
     } catch (error) {
