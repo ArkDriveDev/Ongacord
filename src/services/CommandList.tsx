@@ -1,9 +1,12 @@
 import { useIonRouter } from "@ionic/react";
+import hello1 from '../Responses/CuteResponse/hello1.mp3'
+import womp from '../Responses/CuteResponse/womp.mp3'
+import hai from '../Responses/CuteResponse/hai.mp3'
 
 // Preload audio files
-const helloSound = new Audio('../Responses/CuteResponse/hello1.mp3');
-const defaultSound = new Audio('../Responses/CuteResponse/womp.mp3');
-const haiSound = new Audio('../Responses/CuteResponse/hai.mp3');
+const helloSound = new Audio(hello1);
+const defaultSound = new Audio(womp);
+const haiSound = new Audio(hai);
 
 // Set volumes
 [helloSound, defaultSound, haiSound].forEach(sound => {
