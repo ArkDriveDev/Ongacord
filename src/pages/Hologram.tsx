@@ -8,7 +8,7 @@ import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
 import VoiceService from '../services/VoiceService';
 import CommandList from '../services/CommandList';
-import hai from '../Responses/CuteResponse/hai.mp3';
+import hai from '../Responses/CuteResponse/hai.wav';
 
 interface ModelData {
   id: number;
