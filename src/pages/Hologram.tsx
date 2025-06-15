@@ -1,6 +1,7 @@
 import { 
   IonContent, IonPage, IonHeader, IonToolbar, 
-  IonTitle, IonButtons, IonBackButton, useIonRouter
+  IonTitle, IonButtons, IonBackButton, useIonRouter,
+  isPlatform
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
@@ -34,25 +35,14 @@ const Hologram: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(!isPlatform('mobile'));
   const haiSound = useRef<HTMLAudioElement | null>(null);
 
-  // Initialize and manage hai sound
+  // Initialize audio
   useEffect(() => {
     haiSound.current = new Audio(hai);
     haiSound.current.volume = 0.8;
     haiSound.current.preload = 'auto';
-
-    // First play attempt on load
-    const tryPlay = () => {
-      if (haiSound.current) {
-        haiSound.current.currentTime = 0;
-        haiSound.current.play()
-          .then(() => console.log("hai.mp3 played on load"))
-          .catch(e => console.log("Initial play blocked:", e));
-      }
-    };
-
-    tryPlay();
 
     return () => {
       if (haiSound.current) {
@@ -63,35 +53,71 @@ const Hologram: React.FC = () => {
   }, []);
 
   const playHaiSound = () => {
-    if (haiSound.current) {
-      haiSound.current.currentTime = 0;
-      haiSound.current.play().catch(e => console.error("Hai sound error:", e));
-    }
+    if (!audioEnabled || !haiSound.current) return;
+    
+    haiSound.current.currentTime = 0;
+    haiSound.current.play()
+      .catch(e => console.log("Hai sound blocked:", e));
   };
 
   const handleVoiceCommand = (command: string) => {
-    // Process all commands through CommandList
     CommandList(command, navigation);
   };
 
-  // Initialize voice service
-  useEffect(() => {
-    const initializeVoice = async () => {
-      try {
-        await VoiceService.startListening(handleVoiceCommand);
-        setIsVoiceActive(true);
-        setPermissionGranted(true);
-        playHaiSound(); // Play after permission
-      } catch (error) {
-        console.error("Voice initialization failed:", error);
+  // Initialize voice with user gesture on mobile
+  const enableVoiceSystem = () => {
+    // Unlock audio on iOS
+    const silentAudio = new Audio();
+    silentAudio.volume = 0;
+    silentAudio.play()
+      .then(() => {
+        setAudioEnabled(true);
+        initializeVoice();
+        playHaiSound();
+      })
+      .catch(e => console.log("Audio unlock failed:", e));
+  };
+
+  const initializeVoice = async () => {
+  try {
+    await VoiceService.startListening(handleVoiceCommand);
+    setIsVoiceActive(true);
+    setPermissionGranted(true);
+    
+    // Only play hai.mp3 if we're not on mobile or audio is already enabled
+    if (!isPlatform('mobile') || audioEnabled) {
+      playHaiSound();
+    }
+  } catch (error) {
+    console.error("Voice initialization error:", error);
+    setIsVoiceActive(false);
+    
+    // Specific error handling
+    if (error instanceof Error) {
+      switch(error.name) {
+        case 'NotAllowedError':
+          console.warn("Microphone permission denied");
+          setPermissionGranted(false);
+          break;
+        case 'NetworkError':
+          console.warn("Network connectivity issue");
+          break;
+        case 'NotSupportedError':
+          console.warn("Browser doesn't support speech recognition");
+          break;
+        default:
+          console.warn("Unknown voice error:", error);
       }
-    };
+    }
+  }
+};
 
-    initializeVoice();
-
-    return () => {
-      VoiceService.stopListening();
-    };
+  // Auto-init on desktop
+  useEffect(() => {
+    if (!isPlatform('mobile')) {
+      initializeVoice();
+      playHaiSound();
+    }
   }, []);
 
   // Handle model changes
@@ -106,80 +132,99 @@ const Hologram: React.FC = () => {
   }, [location.state]);
 
   if (!selectedModel) {
-    return (
-      <IonPage>
-        <IonHeader>
-          <IonToolbar>
-            <IonButtons slot="start">
-              <IonBackButton defaultHref="/models" text="Back" />
-            </IonButtons>
-            <IonTitle>Loading...</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent>
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <h3>Loading hologram viewer</h3>
-          </div>
-        </IonContent>
-      </IonPage>
-    );
+    return <LoadingView />;
   }
 
   return (
     <IonPage style={{ backgroundColor: 'black' }}>
+      {/* Mobile activation overlay */}
+      {isPlatform('mobile') && !audioEnabled && (
+        <div className="mobile-activation-overlay">
+          <h2>Voice System Activation</h2>
+          <p>Tap below to enable voice commands</p>
+          <button onClick={enableVoiceSystem}>
+            Enable Voice System
+          </button>
+        </div>
+      )}
+
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
             <IonBackButton defaultHref="/models" text="Back" />
           </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
-          <div slot="end" style={{ 
-            color: isVoiceActive ? '#4CAF50' : '#ccc',
-            padding: '0 16px',
-            fontSize: '0.8rem'
-          }}>
-            {isVoiceActive ? 'Active' : 'Off'}
-          </div>
+          <VoiceStatusIndicator 
+            isActive={isVoiceActive} 
+            isMobile={isPlatform('mobile')}
+          />
         </IonToolbar>
       </IonHeader>
 
       <IonContent fullscreen className="hologram-container">
-        <div className="hologram-center">
-          <div className="reflection-base">
-            <div className="reflection-image top">
-              <img src={selectedModel.src} alt="Top" />
-            </div>
-            <div className="reflection-image right">
-              <img src={selectedModel.src} alt="Right" />
-            </div>
-            <div className="reflection-image bottom">
-              <img src={selectedModel.src} alt="Bottom" />
-            </div>
-            <div className="reflection-image left">
-              <img src={selectedModel.src} alt="Left" />
-            </div>
-          </div>
-        </div>
-
-        {!permissionGranted && (
-          <div style={{
-            position: 'fixed',
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            color: 'white',
-            padding: '10px 20px',
-            borderRadius: '20px',
-            zIndex: 1000,
-            textAlign: 'center'
-          }}>
-            Microphone access required for voice
-          </div>
-        )}
+        <HologramDisplay model={selectedModel} />
+        {!permissionGranted && <MicrophonePermissionPrompt />}
       </IonContent>
     </IonPage>
   );
 };
+
+// Helper Components
+const LoadingView = () => (
+  <IonPage>
+    <IonHeader>
+      <IonToolbar>
+        <IonButtons slot="start">
+          <IonBackButton defaultHref="/models" text="Back" />
+        </IonButtons>
+        <IonTitle>Loading...</IonTitle>
+      </IonToolbar>
+    </IonHeader>
+    <IonContent>
+      <div style={{ textAlign: 'center', padding: '20px' }}>
+        <h3>Loading hologram viewer</h3>
+      </div>
+    </IonContent>
+  </IonPage>
+);
+
+const VoiceStatusIndicator = ({ isActive, isMobile }: { isActive: boolean, isMobile: boolean }) => (
+  <div slot="end" style={{ 
+    color: isActive ? '#4CAF50' : '#ccc',
+    padding: '0 16px',
+    fontSize: '0.8rem'
+  }}>
+    {isMobile ? (isActive ? 'ON' : 'OFF') : (isActive ? 'Active' : 'Inactive')}
+  </div>
+);
+
+const HologramDisplay = ({ model }: { model: ModelData }) => (
+  <div className="hologram-center">
+    <div className="reflection-base">
+      {['top', 'right', 'bottom', 'left'].map((pos) => (
+        <div key={pos} className={`reflection-image ${pos}`}>
+          <img src={model.src} alt={pos} />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const MicrophonePermissionPrompt = () => (
+  <div style={{
+    position: 'fixed',
+    bottom: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    color: 'white',
+    padding: '10px 20px',
+    borderRadius: '20px',
+    zIndex: 1000,
+    textAlign: 'center'
+  }}>
+    Allow microphone access for voice commands
+  </div>
+);
 
 export default Hologram;
