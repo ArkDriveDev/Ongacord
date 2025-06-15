@@ -1,6 +1,6 @@
 import { useIonRouter } from "@ionic/react";
-import hello1 from '../Responses/CuteResponse/hello1.mp3';
-import womp from '../Responses/CuteResponse/womp.mp3';
+import hello1 from '../Responses/CuteResponse/hello1.wav';
+import womp from '../Responses/CuteResponse/womp.wav';
 import VoiceService from './VoiceService';
 
 const commandSounds = {
