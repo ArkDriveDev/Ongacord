@@ -55,46 +55,55 @@ const Hologram: React.FC = () => {
   };
 
   // ✅ Main voice + mic init with hai.wav first
-  useEffect(() => {
-    const initializeVoice = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop()); // Close mic
+useEffect(() => {
+  const initializeVoice = async () => {
+    try {
+      // Always re-request mic access to re-trigger browser prompt
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop()); // Immediately stop mic
 
-        setPermissionGranted(true);
+      setPermissionGranted(true);
 
-        if (haiSound.current) {
-          haiSound.current.currentTime = 0;
-          haiSound.current.play()
-            .then(() => {
-              haiSound.current!.onended = () => {
-                console.log("✅ hai.wav finished, starting voice");
-                VoiceService.startListening(handleVoiceCommand);
-                setIsVoiceActive(true);
-              };
-            })
-            .catch(err => {
-              console.warn("⚠️ hai.wav failed to play:", err);
+      if (haiSound.current) {
+        haiSound.current.currentTime = 0;
+        haiSound.current.play()
+          .then(() => {
+            haiSound.current!.onended = () => {
+              console.log("✅ hai.wav finished, starting voice");
               VoiceService.startListening(handleVoiceCommand);
               setIsVoiceActive(true);
-            });
-        } else {
-          VoiceService.startListening(handleVoiceCommand);
-          setIsVoiceActive(true);
-        }
-
-      } catch (error) {
-        console.error("Voice initialization failed:", error);
-        setPermissionGranted(false);
+            };
+          })
+          .catch(err => {
+            console.warn("⚠️ hai.wav failed to play:", err);
+            VoiceService.startListening(handleVoiceCommand);
+            setIsVoiceActive(true);
+          });
+      } else {
+        VoiceService.startListening(handleVoiceCommand);
+        setIsVoiceActive(true);
       }
-    };
 
-    initializeVoice();
+    } catch (error) {
+      console.error("Voice initialization failed:", error);
+      setPermissionGranted(false);
+    }
+  };
 
-    return () => {
-      VoiceService.stopListening();
-    };
-  }, []);
+  initializeVoice();
+
+  // Also listen to page visibility — if user comes back, re-init
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      initializeVoice(); // re-request mic if tab is revisited
+    }
+  });
+
+  return () => {
+    VoiceService.stopListening();
+  };
+}, []);
+
 
   // Handle selected model from navigation
   useEffect(() => {
