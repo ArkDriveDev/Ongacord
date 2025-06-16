@@ -3,6 +3,7 @@ class VoiceService {
   private isListening = false;
   private isSpeaking = false;
   private onResultCallback: ((command: string) => void) | null = null;
+  private restartTimeout: number | null = null;
 
   constructor() {
     this.initRecognition();
@@ -16,7 +17,7 @@ class VoiceService {
     }
 
     this.recognition = new SpeechRecognition();
-    this.recognition.continuous = true;
+    this.recognition.continuous = true; // Crucial for continuous listening
     this.recognition.interimResults = false;
     this.recognition.lang = "en-US";
 
@@ -27,30 +28,40 @@ class VoiceService {
 
     this.recognition.onerror = (event) => {
       console.error("Recognition error:", (event as SpeechRecognitionErrorEvent).error);
-      this.stopListening();
+      this.scheduleRestart(); // Restart on errors
     };
 
     this.recognition.onend = () => {
       if (this.isListening && !this.isSpeaking) {
-        this.safeRestart();
+        this.scheduleRestart(); // Auto-restart when stopped
       }
     };
   }
 
-  private handleRecognitionResult(transcript: string) {
-    this.pauseListening();
-    this.onResultCallback?.(transcript);
+  private scheduleRestart() {
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+    }
+    this.restartTimeout = window.setTimeout(() => {
+      if (this.isListening && !this.isSpeaking) {
+        this.safeStart();
+      }
+    }, 300); // Short delay before restarting
   }
 
-  private safeRestart() {
+  private safeStart() {
     try {
-      if (this.recognition && !this.isSpeaking) {
+      if (this.recognition && this.isListening) {
         this.recognition.start();
       }
     } catch (error) {
-      console.error("Restart error:", error);
-      setTimeout(() => this.safeRestart(), 500);
+      console.warn("Restart error - retrying:", error);
+      this.scheduleRestart();
     }
+  }
+
+  private handleRecognitionResult(transcript: string) {
+    this.onResultCallback?.(transcript);
   }
 
   async startListening(onResult: (command: string) => void): Promise<boolean> {
@@ -58,39 +69,21 @@ class VoiceService {
 
     this.onResultCallback = onResult;
     this.isListening = true;
-    
-    try {
-      this.recognition.start();
-      return true;
-    } catch (error) {
-      console.error("Start error:", error);
-      this.isListening = false;
-      return false;
-    }
-  }
-
-  pauseListening() {
-    this.isListening = false;
-    this.recognition?.stop();
-  }
-
-  resumeListening() {
-    if (!this.isSpeaking && this.onResultCallback) {
-      this.startListening(this.onResultCallback);
-    }
+    this.safeStart();
+    return true;
   }
 
   stopListening() {
     this.isListening = false;
     this.onResultCallback = null;
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+    }
     this.recognition?.stop();
   }
 
   setSpeakingState(speaking: boolean) {
     this.isSpeaking = speaking;
-    if (!speaking && this.onResultCallback) {
-      this.resumeListening();
-    }
   }
 }
 
