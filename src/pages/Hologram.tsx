@@ -36,7 +36,7 @@ const Hologram: React.FC = () => {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const haiSound = useRef<HTMLAudioElement | null>(null);
 
-  // Initialize hai.mp3 sound
+  // Initialize hai.wav sound
   useEffect(() => {
     haiSound.current = new Audio(hai);
     haiSound.current.volume = 0.8;
@@ -50,31 +50,38 @@ const Hologram: React.FC = () => {
     };
   }, []);
 
-  const playHaiSound = () => {
-    if (haiSound.current) {
-      haiSound.current.currentTime = 0;
-      haiSound.current.play().catch(e => console.error("Hai sound error:", e));
-    }
-  };
-
   const handleVoiceCommand = (command: string) => {
     CommandList(command, navigation); // Play sound & handle command
   };
 
-  // ✅ Main voice + mic init
+  // ✅ Main voice + mic init with hai.wav first
   useEffect(() => {
     const initializeVoice = async () => {
       try {
-        // 1. Request microphone access
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop()); // Immediately stop the mic
+        stream.getTracks().forEach(track => track.stop()); // Close mic
 
-        setPermissionGranted(true); // Show permission granted
-        playHaiSound(); // ✅ Play hai.mp3 safely
+        setPermissionGranted(true);
 
-        // 2. Start voice recognition
-        VoiceService.startListening(handleVoiceCommand);
-        setIsVoiceActive(true);
+        if (haiSound.current) {
+          haiSound.current.currentTime = 0;
+          haiSound.current.play()
+            .then(() => {
+              haiSound.current!.onended = () => {
+                console.log("✅ hai.wav finished, starting voice");
+                VoiceService.startListening(handleVoiceCommand);
+                setIsVoiceActive(true);
+              };
+            })
+            .catch(err => {
+              console.warn("⚠️ hai.wav failed to play:", err);
+              VoiceService.startListening(handleVoiceCommand);
+              setIsVoiceActive(true);
+            });
+        } else {
+          VoiceService.startListening(handleVoiceCommand);
+          setIsVoiceActive(true);
+        }
 
       } catch (error) {
         console.error("Voice initialization failed:", error);

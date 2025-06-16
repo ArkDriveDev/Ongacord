@@ -15,23 +15,25 @@ Object.values(commandSounds).forEach(sound => {
 
 const CommandList = (command: string, navigation: ReturnType<typeof useIonRouter>) => {
   const processed = command.trim().toLowerCase();
-  const sound = processed.includes("hello") ? commandSounds.hello : commandSounds.default;
+  const isHello = processed.includes("hello");
+  const sound = isHello ? commandSounds.hello : commandSounds.default;
 
   try {
-    VoiceService.pauseListening(); // Temporarily stop listening
+    console.log("🔊 Command:", processed, "| Playing:", isHello ? "hello1" : "womp");
+
+    VoiceService.pauseListening();
+
+    sound.onended = () => {
+      console.log("✅ Sound ended, resuming voice recognition");
+      VoiceService.resumeListening();
+    };
 
     sound.currentTime = 0;
-    sound.play()
-      .then(() => {
-        // Resume listening after sound ends
-        sound.onended = () => {
-          VoiceService.resumeListening();
-        };
-      })
-      .catch((e) => {
-        console.error("Audio play failed:", e);
-        VoiceService.resumeListening(); // Resume anyway
-      });
+    sound.play().catch((e) => {
+      console.error("❌ Audio failed to play:", e);
+      VoiceService.resumeListening();
+    });
+
   } catch (e) {
     console.error("CommandList Error:", e);
     VoiceService.resumeListening();
