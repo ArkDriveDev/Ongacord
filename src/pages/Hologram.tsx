@@ -1,6 +1,7 @@
 import {
   IonContent, IonPage, IonHeader, IonToolbar,
-  IonTitle, IonButtons, IonBackButton, useIonRouter
+  IonTitle, IonButtons, IonBackButton, useIonRouter, 
+  useIonViewWillEnter, useIonViewWillLeave
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
@@ -20,8 +21,6 @@ interface LocationState {
   model: ModelData;
 }
 
-let globalSelectedModel: ModelData | null = null;
-
 const DEFAULT_MODEL = {
   id: 1,
   name: 'Orb 1',
@@ -31,12 +30,13 @@ const DEFAULT_MODEL = {
 const Hologram: React.FC = () => {
   const location = useLocation<LocationState>();
   const navigation = useIonRouter();
-  const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
+  const [selectedModel, setSelectedModel] = useState<ModelData>(DEFAULT_MODEL);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const haiSound = useRef<HTMLAudioElement | null>(null);
+  const isMounted = useRef(true);
 
-  // Initialize hai.wav sound
+  // Initialize audio
   useEffect(() => {
     haiSound.current = new Audio(hai);
     haiSound.current.volume = 0.8;
@@ -50,91 +50,73 @@ const Hologram: React.FC = () => {
     };
   }, []);
 
-  const handleVoiceCommand = (command: string) => {
-    CommandList(command, navigation); // Play sound & handle command
-  };
-
-  // ✅ Main voice + mic init with hai.wav first
-useEffect(() => {
-  const initializeVoice = async () => {
-    try {
-      // Always re-request mic access to re-trigger browser prompt
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop()); // Immediately stop mic
-
-      setPermissionGranted(true);
-
-      if (haiSound.current) {
-        haiSound.current.currentTime = 0;
-        haiSound.current.play()
+  const playHaiSound = (): Promise<void> => {
+    return new Promise((resolve) => {
+      if (!haiSound.current) return resolve();
+      
+      haiSound.current.currentTime = 0;
+      const playPromise = haiSound.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
           .then(() => {
-            haiSound.current!.onended = () => {
-              console.log("✅ hai.wav finished, starting voice");
-              VoiceService.startListening(handleVoiceCommand);
-              setIsVoiceActive(true);
-            };
+            haiSound.current!.onended = () => resolve();
           })
-          .catch(err => {
-            console.warn("⚠️ hai.wav failed to play:", err);
-            VoiceService.startListening(handleVoiceCommand);
-            setIsVoiceActive(true);
+          .catch(e => {
+            console.warn("Audio play failed:", e);
+            resolve();
           });
       } else {
+        resolve();
+      }
+    });
+  };
+
+  const handleVoiceCommand = (command: string) => {
+    console.log("Command received:", command);
+    CommandList(command, navigation);
+  };
+
+  // Handle view entry
+  useIonViewWillEnter(() => {
+    isMounted.current = true;
+
+    (async () => {
+      try {
+        // Check microphone permission
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+        
+        if (!isMounted.current) return;
+        
+        setPermissionGranted(true);
+        await playHaiSound();
+        
         VoiceService.startListening(handleVoiceCommand);
         setIsVoiceActive(true);
+      } catch (error) {
+        console.error("Voice initialization failed:", error);
+        if (isMounted.current) {
+          setPermissionGranted(false);
+          setIsVoiceActive(false);
+        }
       }
-
-    } catch (error) {
-      console.error("Voice initialization failed:", error);
-      setPermissionGranted(false);
-    }
-  };
-
-  initializeVoice();
-
-  // Also listen to page visibility — if user comes back, re-init
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      initializeVoice(); // re-request mic if tab is revisited
-    }
+    })();
   });
 
-  return () => {
+  // Handle view exit
+  useIonViewWillLeave(() => {
     VoiceService.stopListening();
-  };
-}, []);
+    setIsVoiceActive(false);
+    isMounted.current = false;
+  });
 
-
-  // Handle selected model from navigation
+  // Update model from navigation
   useEffect(() => {
     if (location.state?.model) {
-      globalSelectedModel = location.state.model;
       setSelectedModel(location.state.model);
-    } else if (!globalSelectedModel) {
-      globalSelectedModel = DEFAULT_MODEL;
-      setSelectedModel(DEFAULT_MODEL);
     }
   }, [location.state]);
-
-  if (!selectedModel) {
-    return (
-      <IonPage>
-        <IonHeader>
-          <IonToolbar>
-            <IonButtons slot="start">
-              <IonBackButton defaultHref="/models" text="Back" />
-            </IonButtons>
-            <IonTitle>Loading...</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent>
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <h3>Loading hologram viewer</h3>
-          </div>
-        </IonContent>
-      </IonPage>
-    );
-  }
 
   return (
     <IonPage style={{ backgroundColor: 'black' }}>
@@ -185,7 +167,7 @@ useEffect(() => {
             zIndex: 1000,
             textAlign: 'center'
           }}>
-            Microphone access required for voice
+            Microphone access required for voice commands
           </div>
         )}
       </IonContent>

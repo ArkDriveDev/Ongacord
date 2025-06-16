@@ -3,37 +3,32 @@ import hello1 from '../Responses/CuteResponse/hello1.wav';
 import womp from '../Responses/CuteResponse/womp.wav';
 import VoiceService from './VoiceService';
 
-const commandSounds = {
-  hello: new Audio(hello1),
-  default: new Audio(womp)
+const playSoundForCommand = (command: string): Promise<void> => {
+  return new Promise((resolve) => {
+    const isHello = command.includes("hello");
+    const soundFile = isHello ? hello1 : womp;
+    const audio = new Audio(soundFile);
+    audio.volume = 0.8;
+    audio.preload = 'auto';
+
+    audio.play()
+      .then(() => {
+        audio.onended = () => resolve();
+      })
+      .catch(err => {
+        console.warn("⚠️ Sound failed to play:", err);
+        resolve();
+      });
+  });
 };
 
-Object.values(commandSounds).forEach(sound => {
-  sound.volume = 0.8;
-  sound.preload = 'auto';
-});
-
-const CommandList = (command: string, navigation: ReturnType<typeof useIonRouter>) => {
+const CommandList = async (command: string, navigation: ReturnType<typeof useIonRouter>) => {
   const processed = command.trim().toLowerCase();
-  const isHello = processed.includes("hello");
-  const sound = isHello ? commandSounds.hello : commandSounds.default;
 
   try {
-    console.log("🔊 Command:", processed, "| Playing:", isHello ? "hello1" : "womp");
-
     VoiceService.pauseListening();
-
-    sound.onended = () => {
-      console.log("✅ Sound ended, resuming voice recognition");
-      VoiceService.resumeListening();
-    };
-
-    sound.currentTime = 0;
-    sound.play().catch((e) => {
-      console.error("❌ Audio failed to play:", e);
-      VoiceService.resumeListening();
-    });
-
+    await playSoundForCommand(processed);
+    VoiceService.resumeListening();
   } catch (e) {
     console.error("CommandList Error:", e);
     VoiceService.resumeListening();
