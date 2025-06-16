@@ -4,119 +4,74 @@ import {
   useIonViewWillEnter, useIonViewWillLeave
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
 import VoiceService from '../services/VoiceService';
 import CommandList from '../services/CommandList';
-import hai from '../Responses/CuteResponse/hai.wav';
+import hello from '../Responses/CuteResponse/hello1.ogg';
 
-interface ModelData {
+interface HologramModel {
   id: number;
   name: string;
   src: string;
 }
 
-interface LocationState {
-  model: ModelData;
-}
-
-const DEFAULT_MODEL = {
+const DEFAULT_MODEL: HologramModel = {
   id: 1,
   name: 'Orb 1',
   src: Orb1
 };
 
 const Hologram: React.FC = () => {
-  const location = useLocation<LocationState>();
+  const location = useLocation<{ model?: HologramModel }>();
   const navigation = useIonRouter();
-  const [selectedModel, setSelectedModel] = useState<ModelData>(DEFAULT_MODEL);
+  const [selectedModel, setSelectedModel] = useState<HologramModel>(DEFAULT_MODEL);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const haiSound = useRef<HTMLAudioElement | null>(null);
-  const isMounted = useRef(true);
 
-  // Initialize audio
-  useEffect(() => {
-    haiSound.current = new Audio(hai);
-    haiSound.current.volume = 0.8;
-    haiSound.current.preload = 'auto';
-
-    return () => {
-      if (haiSound.current) {
-        haiSound.current.pause();
-        haiSound.current = null;
-      }
-    };
-  }, []);
-
-  const playHaiSound = (): Promise<void> => {
-    return new Promise((resolve) => {
-      if (!haiSound.current) return resolve();
-      
-      haiSound.current.currentTime = 0;
-      const playPromise = haiSound.current.play();
-      
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            haiSound.current!.onended = () => resolve();
-          })
-          .catch(e => {
-            console.warn("Audio play failed:", e);
-            resolve();
-          });
-      } else {
-        resolve();
-      }
-    });
-  };
-
-  const handleVoiceCommand = (command: string) => {
-    console.log("Command received:", command);
-    CommandList(command, navigation);
-  };
-
-  // Handle view entry
-  useIonViewWillEnter(() => {
-    isMounted.current = true;
-
-    (async () => {
-      try {
-        // Check microphone permission
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
-        
-        if (!isMounted.current) return;
-        
-        setPermissionGranted(true);
-        await playHaiSound();
-        
-        VoiceService.startListening(handleVoiceCommand);
-        setIsVoiceActive(true);
-      } catch (error) {
-        console.error("Voice initialization failed:", error);
-        if (isMounted.current) {
-          setPermissionGranted(false);
-          setIsVoiceActive(false);
-        }
-      }
-    })();
-  });
-
-  // Handle view exit
-  useIonViewWillLeave(() => {
-    VoiceService.stopListening();
-    setIsVoiceActive(false);
-    isMounted.current = false;
-  });
-
-  // Update model from navigation
+  // Safe model loading
   useEffect(() => {
     if (location.state?.model) {
       setSelectedModel(location.state.model);
     }
   }, [location.state]);
+
+  const handleVoiceCommand = useCallback(async (command: string) => {
+    try {
+      VoiceService.setSpeakingState(true);
+      await CommandList(command, navigation);
+    } finally {
+      VoiceService.setSpeakingState(false);
+    }
+  }, [navigation]);
+
+  useIonViewWillEnter(() => {
+    const initialize = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+        setPermissionGranted(true);
+        
+        const started = await VoiceService.startListening(handleVoiceCommand);
+        setIsVoiceActive(started);
+        
+        if (started) {
+          await new Audio(hello).play();
+        }
+      } catch (error) {
+        console.error("Voice init error:", error);
+        setPermissionGranted(false);
+        setIsVoiceActive(false);
+      }
+    };
+    initialize();
+  });
+
+  useIonViewWillLeave(() => {
+    VoiceService.stopListening();
+    setIsVoiceActive(false);
+  });
 
   return (
     <IonPage style={{ backgroundColor: 'black' }}>
@@ -126,7 +81,7 @@ const Hologram: React.FC = () => {
             <IonBackButton defaultHref="/models" text="Back" />
           </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
-          <div slot="end" style={{
+          <div slot="end" style={{ 
             color: isVoiceActive ? '#4CAF50' : '#ccc',
             padding: '0 16px',
             fontSize: '0.8rem'
@@ -137,19 +92,36 @@ const Hologram: React.FC = () => {
       </IonHeader>
 
       <IonContent fullscreen className="hologram-container">
+        {/* Your beautiful hologram design - fully restored! */}
         <div className="hologram-center">
           <div className="reflection-base">
             <div className="reflection-image top">
-              <img src={selectedModel.src} alt="Top" />
+              <img 
+                src={selectedModel.src} 
+                alt="Top Reflection" 
+                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
+              />
             </div>
             <div className="reflection-image right">
-              <img src={selectedModel.src} alt="Right" />
+              <img 
+                src={selectedModel.src} 
+                alt="Right Reflection" 
+                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
+              />
             </div>
             <div className="reflection-image bottom">
-              <img src={selectedModel.src} alt="Bottom" />
+              <img 
+                src={selectedModel.src} 
+                alt="Bottom Reflection" 
+                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
+              />
             </div>
             <div className="reflection-image left">
-              <img src={selectedModel.src} alt="Left" />
+              <img 
+                src={selectedModel.src} 
+                alt="Left Reflection" 
+                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
+              />
             </div>
           </div>
         </div>

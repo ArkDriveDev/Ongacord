@@ -1,37 +1,40 @@
 import { useIonRouter } from "@ionic/react";
-import hello1 from '../Responses/CuteResponse/hello1.wav';
-import womp from '../Responses/CuteResponse/womp.wav';
-import VoiceService from './VoiceService';
+import hai from '../Responses/CuteResponse/hai.ogg';
+import womp from '../Responses/CuteResponse/womp.ogg';
 
-const playSoundForCommand = (command: string): Promise<void> => {
-  return new Promise((resolve) => {
-    const isHello = command.includes("hello");
-    const soundFile = isHello ? hello1 : womp;
-    const audio = new Audio(soundFile);
-    audio.volume = 0.8;
-    audio.preload = 'auto';
-
-    audio.play()
-      .then(() => {
-        audio.onended = () => resolve();
-      })
-      .catch(err => {
-        console.warn("⚠️ Sound failed to play:", err);
-        resolve();
-      });
-  });
+// Preloaded audio instances
+const audioCache: Record<string, HTMLAudioElement> = {
+  hai: new Audio(hai),
+  womp: new Audio(womp)
 };
+
+// Initialize audio
+Object.values(audioCache).forEach(audio => {
+  audio.volume = 0.8;
+  audio.preload = 'auto';
+});
 
 const CommandList = async (command: string, navigation: ReturnType<typeof useIonRouter>) => {
   const processed = command.trim().toLowerCase();
+  const sound = processed.includes("hello") ? 'hai' : 'womp';
 
   try {
-    VoiceService.pauseListening();
-    await playSoundForCommand(processed);
-    VoiceService.resumeListening();
-  } catch (e) {
-    console.error("CommandList Error:", e);
-    VoiceService.resumeListening();
+    // Get or create audio instance
+    const audio = audioCache[sound] || new Audio(sound === 'hai' ? hai : womp);
+    audio.currentTime = 0;
+    
+    await audio.play().catch(async (error) => {
+      console.warn("Playback failed, trying fallback:", error);
+      const fallback = new Audio(sound === 'hai' ? hai : womp);
+      await fallback.play();
+    });
+
+    // Handle special commands
+    if (processed.includes("go back")) {
+      navigation.goBack();
+    }
+  } catch (error) {
+    console.error("Audio error:", error);
   }
 };
 
