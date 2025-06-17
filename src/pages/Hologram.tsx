@@ -29,9 +29,9 @@ const Hologram: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<HologramModel>(DEFAULT_MODEL);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const [isPulsing, setIsPulsing] = useState(false);
+  const [isResponding, setIsResponding] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const pulseIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Safe model loading
   useEffect(() => {
@@ -40,45 +40,44 @@ const Hologram: React.FC = () => {
     }
   }, [location.state]);
 
-  const handleVoiceCommand = useCallback(async (command: string) => {
-    try {
-      VoiceService.setSpeakingState(true);
-      await CommandList(command, navigation);
-    } finally {
-      VoiceService.setSpeakingState(false);
-    }
-  }, [navigation]);
-
-  const startPulseEffect = () => {
-    // Clear any existing interval
-    if (pulseIntervalRef.current) {
-      clearInterval(pulseIntervalRef.current);
-    }
-    
-    // Start new pulsing effect
-    setIsPulsing(true);
-    
-    pulseIntervalRef.current = setInterval(() => {
-      // This will make the pulse effect more organic
-      setIsPulsing(prev => !prev);
-    }, 500); // Pulse every 500ms
-  };
-
-  const stopPulseEffect = () => {
-    if (pulseIntervalRef.current) {
-      clearInterval(pulseIntervalRef.current);
-      pulseIntervalRef.current = null;
-    }
-    setIsPulsing(false);
-  };
-
   const playHelloSound = () => {
     if (audioRef.current) {
-      startPulseEffect();
+      setIsResponding(true);
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(e => console.error("Audio play error:", e));
+      
+      // Set timeout to match hello sound duration
+      if (responseTimeoutRef.current) {
+        clearTimeout(responseTimeoutRef.current);
+      }
+      responseTimeoutRef.current = setTimeout(() => {
+        setIsResponding(false);
+      }, 2000); // Adjust to match your hello sound length
     }
   };
+
+  const handleVoiceCommand = useCallback(async (command: string) => {
+    try {
+      // Activate response effect
+      setIsResponding(true);
+      
+      // Clear any previous timeout
+      if (responseTimeoutRef.current) {
+        clearTimeout(responseTimeoutRef.current);
+      }
+      
+      // Process command and play sound
+      await CommandList(command, navigation);
+      
+      // Set timeout to deactivate effect after response completes
+      responseTimeoutRef.current = setTimeout(() => {
+        setIsResponding(false);
+      }, 2000); // Match this with your longest sound duration
+    } catch (error) {
+      console.error("Command error:", error);
+      setIsResponding(false);
+    }
+  }, [navigation]);
 
   useIonViewWillEnter(() => {
     audioRef.current = new Audio(hello);
@@ -107,10 +106,10 @@ const Hologram: React.FC = () => {
     // Set up audio event listeners
     if (audioRef.current) {
       audioRef.current.onended = () => {
-        stopPulseEffect();
+        setIsResponding(false);
       };
       audioRef.current.onplay = () => {
-        startPulseEffect();
+        setIsResponding(true);
       };
     }
   });
@@ -118,13 +117,13 @@ const Hologram: React.FC = () => {
   useIonViewWillLeave(() => {
     VoiceService.stopListening();
     setIsVoiceActive(false);
-    stopPulseEffect();
+    setIsResponding(false);
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
-    if (pulseIntervalRef.current) {
-      clearInterval(pulseIntervalRef.current);
+    if (responseTimeoutRef.current) {
+      clearTimeout(responseTimeoutRef.current);
     }
   });
 
@@ -147,7 +146,7 @@ const Hologram: React.FC = () => {
       </IonHeader>
 
       <IonContent fullscreen className="hologram-container">
-        <div className={`hologram-center ${isPulsing ? 'pulse-effect' : ''}`}>
+        <div className={`hologram-center ${isResponding ? 'pulse-effect' : ''}`}>
           <div className="reflection-base">
             <div className="reflection-image top">
               <img 
