@@ -4,7 +4,7 @@ import {
   useIonViewWillEnter, useIonViewWillLeave
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
 import VoiceService from '../services/VoiceService';
@@ -29,6 +29,9 @@ const Hologram: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<HologramModel>(DEFAULT_MODEL);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [isPulsing, setIsPulsing] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const pulseIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Safe model loading
   useEffect(() => {
@@ -46,7 +49,41 @@ const Hologram: React.FC = () => {
     }
   }, [navigation]);
 
+  const startPulseEffect = () => {
+    // Clear any existing interval
+    if (pulseIntervalRef.current) {
+      clearInterval(pulseIntervalRef.current);
+    }
+    
+    // Start new pulsing effect
+    setIsPulsing(true);
+    
+    pulseIntervalRef.current = setInterval(() => {
+      // This will make the pulse effect more organic
+      setIsPulsing(prev => !prev);
+    }, 500); // Pulse every 500ms
+  };
+
+  const stopPulseEffect = () => {
+    if (pulseIntervalRef.current) {
+      clearInterval(pulseIntervalRef.current);
+      pulseIntervalRef.current = null;
+    }
+    setIsPulsing(false);
+  };
+
+  const playHelloSound = () => {
+    if (audioRef.current) {
+      startPulseEffect();
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => console.error("Audio play error:", e));
+    }
+  };
+
   useIonViewWillEnter(() => {
+    audioRef.current = new Audio(hello);
+    audioRef.current.preload = 'auto';
+
     const initialize = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -57,7 +94,7 @@ const Hologram: React.FC = () => {
         setIsVoiceActive(started);
         
         if (started) {
-          await new Audio(hello).play();
+          playHelloSound();
         }
       } catch (error) {
         console.error("Voice init error:", error);
@@ -66,11 +103,29 @@ const Hologram: React.FC = () => {
       }
     };
     initialize();
+
+    // Set up audio event listeners
+    if (audioRef.current) {
+      audioRef.current.onended = () => {
+        stopPulseEffect();
+      };
+      audioRef.current.onplay = () => {
+        startPulseEffect();
+      };
+    }
   });
 
   useIonViewWillLeave(() => {
     VoiceService.stopListening();
     setIsVoiceActive(false);
+    stopPulseEffect();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (pulseIntervalRef.current) {
+      clearInterval(pulseIntervalRef.current);
+    }
   });
 
   return (
@@ -92,8 +147,7 @@ const Hologram: React.FC = () => {
       </IonHeader>
 
       <IonContent fullscreen className="hologram-container">
-        {/* Your beautiful hologram design - fully restored! */}
-        <div className="hologram-center">
+        <div className={`hologram-center ${isPulsing ? 'pulse-effect' : ''}`}>
           <div className="reflection-base">
             <div className="reflection-image top">
               <img 
