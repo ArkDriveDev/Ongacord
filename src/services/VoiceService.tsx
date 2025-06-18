@@ -1,89 +1,82 @@
+import { SpeechRecognition } from '@capacitor-community/speech-recognition';
+
 class VoiceService {
-  private recognition: SpeechRecognition | null = null;
   private isListening = false;
-  private isSpeaking = false;
-  private onResultCallback: ((command: string) => void) | null = null;
-  private restartTimeout: number | null = null;
 
-  constructor() {
-    this.initRecognition();
-  }
-
-  private initRecognition() {
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.error("Speech Recognition not supported");
-      return;
-    }
-
-    this.recognition = new SpeechRecognition();
-    this.recognition.continuous = true; // Crucial for continuous listening
-    this.recognition.interimResults = false;
-    this.recognition.lang = "en-US";
-
-    this.recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.trim();
-      this.handleRecognitionResult(transcript.toLowerCase());
-    };
-
-    this.recognition.onerror = (event) => {
-      console.error("Recognition error:", (event as SpeechRecognitionErrorEvent).error);
-      this.scheduleRestart(); // Restart on errors
-    };
-
-    this.recognition.onend = () => {
-      if (this.isListening && !this.isSpeaking) {
-        this.scheduleRestart(); // Auto-restart when stopped
-      }
-    };
-  }
-
-  private scheduleRestart() {
-    if (this.restartTimeout) {
-      clearTimeout(this.restartTimeout);
-    }
-    this.restartTimeout = window.setTimeout(() => {
-      if (this.isListening && !this.isSpeaking) {
-        this.safeStart();
-      }
-    }, 300); // Short delay before restarting
-  }
-
-  private safeStart() {
+  async init(): Promise<boolean> {
     try {
-      if (this.recognition && this.isListening) {
-        this.recognition.start();
+      // 1. Check availability
+      const { available } = await SpeechRecognition.available();
+      if (!available) {
+        console.warn("Speech recognition not available on this device");
+        return false;
       }
+
+      // 2. Handle permissions
+      const hasPermission = await this.checkAndRequestPermissions();
+      if (!hasPermission) {
+        console.warn("Microphone permission denied");
+        return false;
+      }
+
+      return true;
     } catch (error) {
-      console.warn("Restart error - retrying:", error);
-      this.scheduleRestart();
+      console.error("Initialization error:", error);
+      return false;
     }
   }
 
-  private handleRecognitionResult(transcript: string) {
-    this.onResultCallback?.(transcript);
+  private async checkAndRequestPermissions(): Promise<boolean> {
+    try {
+      const status = await SpeechRecognition.checkPermissions();
+      
+      if (status.speechRecognition !== 'granted') {
+        const requestStatus = await SpeechRecognition.requestPermissions();
+        return requestStatus.speechRecognition === 'granted';
+      }
+      return true;
+    } catch (error) {
+      console.error("Permission error:", error);
+      return false;
+    }
   }
 
   async startListening(onResult: (command: string) => void): Promise<boolean> {
-    if (!this.recognition || this.isListening) return false;
+    if (this.isListening) return false;
 
-    this.onResultCallback = onResult;
-    this.isListening = true;
-    this.safeStart();
-    return true;
-  }
+    try {
+      await SpeechRecognition.start({
+        language: "en-US",
+        partialResults: true,
+        popup: false,
+      });
 
-  stopListening() {
-    this.isListening = false;
-    this.onResultCallback = null;
-    if (this.restartTimeout) {
-      clearTimeout(this.restartTimeout);
+      // Correct event listener with proper typing
+      SpeechRecognition.addListener("partialResults", (data: {matches?: string[]}) => {
+        if (data?.matches && data.matches.length > 0) {
+          const transcript = data.matches[0];
+          onResult(transcript.toLowerCase().trim());
+        }
+      });
+
+      this.isListening = true;
+      return true;
+    } catch (error) {
+      console.error("Start listening error:", error);
+      return false;
     }
-    this.recognition?.stop();
   }
 
-  setSpeakingState(speaking: boolean) {
-    this.isSpeaking = speaking;
+  async stopListening(): Promise<void> {
+    if (!this.isListening) return;
+    
+    try {
+      await SpeechRecognition.stop();
+      SpeechRecognition.removeAllListeners();
+      this.isListening = false;
+    } catch (error) {
+      console.error("Stop listening error:", error);
+    }
   }
 }
 
