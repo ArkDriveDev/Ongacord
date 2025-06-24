@@ -31,10 +31,10 @@ const Hologram: React.FC = () => {
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
+  const [isReversed, setIsReversed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Safe model loading
   useEffect(() => {
     if (location.state?.model) {
       setSelectedModel(location.state.model);
@@ -47,33 +47,72 @@ const Hologram: React.FC = () => {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(e => console.error("Audio play error:", e));
 
-      // Set timeout to match hello sound duration
       if (responseTimeoutRef.current) {
         clearTimeout(responseTimeoutRef.current);
       }
       responseTimeoutRef.current = setTimeout(() => {
         setIsResponding(false);
-      }, 2000); // Adjust to match your hello sound length
+      }, 2000);
     }
+  };
+
+  const handleReverseClick = () => {
+    setIsReversed(!isReversed);
+  };
+
+  const getTransformStyle = (position: string) => {
+    const baseTransforms = {
+      top: 'translateX(-50%)',
+      right: 'translateY(-50%) rotate(90deg) scaleX(-1)',
+      bottom: 'translateX(-50%) scaleY(-1)',
+      left: 'translateY(-50%) rotate(270deg)'
+    };
+
+    if (!isReversed) return baseTransforms[position as keyof typeof baseTransforms];
+
+    const reversedTransforms = {
+      top: baseTransforms.bottom,
+      right: baseTransforms.left,
+      bottom: baseTransforms.top,
+      left: baseTransforms.right
+    };
+
+    return reversedTransforms[position as keyof typeof reversedTransforms];
+  };
+
+  const getPositionStyle = (position: string) => {
+    const basePositions = {
+      top: { top: '10%', left: '50%' },
+      right: { top: '50%', right: '10%' },
+      bottom: { bottom: '10%', left: '50%' },
+      left: { top: '50%', left: '10%' }
+    };
+
+    if (!isReversed) return basePositions[position as keyof typeof basePositions];
+
+    const reversedPositions = {
+      top: basePositions.bottom,
+      right: basePositions.left,
+      bottom: basePositions.top,
+      left: basePositions.right
+    };
+
+    return reversedPositions[position as keyof typeof reversedPositions];
   };
 
   const handleVoiceCommand = useCallback(async (command: string) => {
     try {
-      // Activate response effect
       setIsResponding(true);
 
-      // Clear any previous timeout
       if (responseTimeoutRef.current) {
         clearTimeout(responseTimeoutRef.current);
       }
 
-      // Process command and play sound
       await CommandList(command, navigation);
 
-      // Set timeout to deactivate effect after response completes
       responseTimeoutRef.current = setTimeout(() => {
         setIsResponding(false);
-      }, 2000); // Match this with your longest sound duration
+      }, 2000);
     } catch (error) {
       console.error("Command error:", error);
       setIsResponding(false);
@@ -104,7 +143,6 @@ const Hologram: React.FC = () => {
     };
     initialize();
 
-    // Set up audio event listeners
     if (audioRef.current) {
       audioRef.current.onended = () => {
         setIsResponding(false);
@@ -150,39 +188,24 @@ const Hologram: React.FC = () => {
         <div className={`hologram-center ${isResponding ? 'pulse-effect' : ''}`}>
           <img
             src={reverseImage}
-            alt="Center Hologram"
+            alt="Reverse Hologram"
             className="center-image"
+            onClick={handleReverseClick}
             onError={(e) => console.error("Failed to load center image")}
           />
           <div className="reflection-base">
-            <div className="reflection-image top">
-              <img
-                src={selectedModel.src}
-                alt="Top Reflection"
-                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
-              />
-            </div>
-            <div className="reflection-image right">
-              <img
-                src={selectedModel.src}
-                alt="Right Reflection"
-                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
-              />
-            </div>
-            <div className="reflection-image bottom">
-              <img
-                src={selectedModel.src}
-                alt="Bottom Reflection"
-                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
-              />
-            </div>
-            <div className="reflection-image left">
-              <img
-                src={selectedModel.src}
-                alt="Left Reflection"
-                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
-              />
-            </div>
+            {['top', 'right', 'bottom', 'left'].map((position) => (
+              <div
+                key={position}
+                className={`reflection-image ${position} ${isReversed ? 'reversed' : ''}`}
+              >
+                <img
+                  src={selectedModel.src}
+                  alt={`${position} Reflection`}
+                  onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
+                />
+              </div>
+            ))}
           </div>
         </div>
 

@@ -78,78 +78,57 @@ ion-content.hologram-container {
   }
 }
 
-/* Positioning */
-.reflection-image.top {
+/* Positioning - Normal State */
+.reflection-image.top:not(.reversed) {
   top: 10%;
   left: 50%;
   transform: translateX(-50%);
 }
 
-.reflection-image.right {
+.reflection-image.right:not(.reversed) {
   top: 50%;
   right: 10%;
   transform: translateY(-50%) rotate(90deg) scaleX(-1);
 }
 
-.reflection-image.bottom {
+.reflection-image.bottom:not(.reversed) {
   bottom: 10%;
   left: 50%;
   transform: translateX(-50%) scaleY(-1);
 }
 
-.reflection-image.left {
+.reflection-image.left:not(.reversed) {
   top: 50%;
   left: 10%;
   transform: translateY(-50%) rotate(270deg);
 }
 
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-  .hologram-center {
-    width: 115vmin;
-    height: 115vmin;
-    margin: 30vh auto 0;
-    left: 50%;
-    transform: translateX(-50%) translateY(-15%);
-  }
-
-  .reflection-image {
-    width: 22%;
-    height: 22%;
-  }
-  
-  .reflection-image.top {
-    top: 12%;
-  }
-  .reflection-image.right {
-    right: 11%;
-    transform: translateY(-50%) rotate(90deg) scaleX(-1) translateX(2px);
-  }
-  .reflection-image.bottom {
-    bottom: 12%;
-  }
-  .reflection-image.left {
-    left: 12%;
-  }
-
-  /* More pronounced effect on mobile */
-  @keyframes pulse {
-    0% {
-      transform: scale(1);
-      filter: 
-        brightness(1) 
-        drop-shadow(0 0 15px rgba(0, 255, 255, 0.8))
-        drop-shadow(0 0 30px rgba(0, 200, 255, 0.6));
-    }
-    100% {
-      transform: scale(1.2);
-      filter: 
-        brightness(1.5) 
-        drop-shadow(0 0 25px rgba(0, 255, 255, 1))
-        drop-shadow(0 0 50px rgba(0, 230, 255, 0.8));
-    }
-  }
+/* Positioning - Reversed State */
+.reflection-image.top.reversed {
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%) scaleY(-1);
 }
+
+.reflection-image.right.reversed {
+  top: 50%;
+  left: 10%;
+  transform: translateY(-50%) rotate(270deg);
+}
+
+.reflection-image.bottom.reversed {
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.reflection-image.left.reversed {
+  top: 50%;
+  right: 10%;
+  transform: translateY(-50%) rotate(90deg) scaleX(-1);
+}
+
+/* Center Image */
 .center-image {
   position: absolute;
   width: 10%;
@@ -162,6 +141,7 @@ ion-content.hologram-container {
     drop-shadow(0 0 10px rgba(0, 255, 255, 0.7))
     brightness(1.1);
   transition: all 0.4s ease;
+  cursor: pointer;
 }
 
 .pulse-effect .center-image {
@@ -183,22 +163,70 @@ ion-content.hologram-container {
   }
 }
 
-/* Mobile adjustment */
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
+  .hologram-center {
+    width: 115vmin;
+    height: 115vmin;
+    margin: 30vh auto 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(-15%);
+  }
+
+  .reflection-image {
+    width: 22%;
+    height: 22%;
+  }
+  
+  .reflection-image.top:not(.reversed) {
+    top: 12%;
+  }
+  .reflection-image.right:not(.reversed) {
+    right: 11%;
+    transform: translateY(-50%) rotate(90deg) scaleX(-1) translateX(2px);
+  }
+  .reflection-image.bottom:not(.reversed) {
+    bottom: 12%;
+  }
+  .reflection-image.left:not(.reversed) {
+    left: 12%;
+  }
+
+  /* Reversed state mobile adjustments */
+  .reflection-image.top.reversed {
+    bottom: 12%;
+  }
+  .reflection-image.right.reversed {
+    left: 12%;
+  }
+  .reflection-image.bottom.reversed {
+    top: 12%;
+  }
+  .reflection-image.left.reversed {
+    right: 11%;
+    transform: translateY(-50%) rotate(90deg) scaleX(-1) translateX(2px);
+  }
+
   .center-image {
     width: 35%;
     height: 35%;
   }
-}
-.reflection-image img {
-  width: 120%;
-  height: 120%;
-  object-fit: contain;
-  transition: all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
-  filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.3));
-}
 
-/* Keep your existing pulse effect */
-.pulse-effect .reflection-image img {
-  animation: pulse 0.6s ease-in-out infinite alternate;
+  /* More pronounced effect on mobile */
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      filter: 
+        brightness(1) 
+        drop-shadow(0 0 15px rgba(0, 255, 255, 0.8))
+        drop-shadow(0 0 30px rgba(0, 200, 255, 0.6));
+    }
+    100% {
+      transform: scale(1.2);
+      filter: 
+        brightness(1.5) 
+        drop-shadow(0 0 25px rgba(0, 255, 255, 1))
+        drop-shadow(0 0 50px rgba(0, 230, 255, 0.8));
+    }
+  }
 }
