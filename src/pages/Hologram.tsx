@@ -1,6 +1,6 @@
 import {
   IonContent, IonPage, IonHeader, IonToolbar,
-  IonTitle, IonButtons, IonBackButton, useIonRouter, 
+  IonTitle, IonButtons, IonBackButton, useIonRouter,
   useIonViewWillEnter, useIonViewWillLeave
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
@@ -10,6 +10,7 @@ import Orb1 from '../images/Orb1.gif';
 import VoiceService from '../services/VoiceService';
 import CommandList from '../services/CommandList';
 import hello from '../Responses/CuteResponse/hello1.ogg';
+import reverseImage from '../images/reverse.png';
 
 interface HologramModel {
   id: number;
@@ -45,7 +46,7 @@ const Hologram: React.FC = () => {
       setIsResponding(true);
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(e => console.error("Audio play error:", e));
-      
+
       // Set timeout to match hello sound duration
       if (responseTimeoutRef.current) {
         clearTimeout(responseTimeoutRef.current);
@@ -60,15 +61,15 @@ const Hologram: React.FC = () => {
     try {
       // Activate response effect
       setIsResponding(true);
-      
+
       // Clear any previous timeout
       if (responseTimeoutRef.current) {
         clearTimeout(responseTimeoutRef.current);
       }
-      
+
       // Process command and play sound
       await CommandList(command, navigation);
-      
+
       // Set timeout to deactivate effect after response completes
       responseTimeoutRef.current = setTimeout(() => {
         setIsResponding(false);
@@ -88,10 +89,10 @@ const Hologram: React.FC = () => {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach(track => track.stop());
         setPermissionGranted(true);
-        
+
         const started = await VoiceService.startListening(handleVoiceCommand);
         setIsVoiceActive(started);
-        
+
         if (started) {
           playHelloSound();
         }
@@ -135,7 +136,7 @@ const Hologram: React.FC = () => {
             <IonBackButton defaultHref="/models" text="Back" />
           </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
-          <div slot="end" style={{ 
+          <div slot="end" style={{
             color: isVoiceActive ? '#4CAF50' : '#ccc',
             padding: '0 16px',
             fontSize: '0.8rem'
@@ -147,32 +148,38 @@ const Hologram: React.FC = () => {
 
       <IonContent fullscreen className="hologram-container">
         <div className={`hologram-center ${isResponding ? 'pulse-effect' : ''}`}>
+          <img
+            src={reverseImage}
+            alt="Center Hologram"
+            className="center-image"
+            onError={(e) => console.error("Failed to load center image")}
+          />
           <div className="reflection-base">
             <div className="reflection-image top">
-              <img 
-                src={selectedModel.src} 
-                alt="Top Reflection" 
+              <img
+                src={selectedModel.src}
+                alt="Top Reflection"
                 onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
               />
             </div>
             <div className="reflection-image right">
-              <img 
-                src={selectedModel.src} 
-                alt="Right Reflection" 
+              <img
+                src={selectedModel.src}
+                alt="Right Reflection"
                 onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
               />
             </div>
             <div className="reflection-image bottom">
-              <img 
-                src={selectedModel.src} 
-                alt="Bottom Reflection" 
+              <img
+                src={selectedModel.src}
+                alt="Bottom Reflection"
                 onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
               />
             </div>
             <div className="reflection-image left">
-              <img 
-                src={selectedModel.src} 
-                alt="Left Reflection" 
+              <img
+                src={selectedModel.src}
+                alt="Left Reflection"
                 onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
               />
             </div>
