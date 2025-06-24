@@ -34,6 +34,9 @@ const Hologram: React.FC = () => {
   const [isResponding, setIsResponding] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const handleReverse = () => {
+    setIsReversed(!isReversed);
+  };
 
   // Safe model loading
   useEffect(() => {
