@@ -25,6 +25,7 @@ const DEFAULT_MODEL: HologramModel = {
 };
 
 const Hologram: React.FC = () => {
+  const [isReversed, setIsReversed] = useState(false);
   const location = useLocation<{ model?: HologramModel }>();
   const navigation = useIonRouter();
   const [selectedModel, setSelectedModel] = useState<HologramModel>(DEFAULT_MODEL);
