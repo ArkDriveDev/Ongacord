@@ -20,7 +20,7 @@ ion-content.hologram-container {
   height: 140vmin;
   max-width: 580px;
   max-height: 580px;
-  margin: 15vh auto 0;
+  margin: 18vh auto 0;
   transform: translateY(-10%);
 }
 
@@ -152,8 +152,8 @@ ion-content.hologram-container {
 }
 .center-image {
   position: absolute;
-  width: 30%;
-  height: 30%;
+  width: 10%;
+  height: 10%;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
