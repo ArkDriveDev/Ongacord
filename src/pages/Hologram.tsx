@@ -145,7 +145,7 @@ const Hologram: React.FC = () => {
       </IonHeader>
 
       <IonContent fullscreen className="hologram-container">
-        <div className="hologram-center">
+        <div className={`hologram-center ${isResponding ? 'pulse-effect' : ''}`}>
           <img
             src={reverseImage}
             alt="Reverse Hologram"
@@ -162,7 +162,6 @@ const Hologram: React.FC = () => {
                 <img
                   src={selectedModel.src}
                   alt={`${position} Reflection`}
-                  className={isReversed ? 'mirrored' : ''}
                   onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
                 />
               </div>

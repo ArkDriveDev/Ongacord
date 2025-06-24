@@ -32,6 +32,7 @@ ion-content.hologram-container {
   height: 100%;
   top: 0;
   left: 0;
+  transition: transform 0.6s ease-in-out;
 }
 
 /* Image Containers */
@@ -42,7 +43,7 @@ ion-content.hologram-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: transparent;
+  transition: transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 /* Image Styling */
@@ -50,30 +51,10 @@ ion-content.hologram-container {
   width: 120%;
   height: 120%;
   object-fit: contain;
-  transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
   filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.3));
 }
 
-/* Enhanced Pulsing Animation Effect */
-.pulse-effect .reflection-image img {
-  animation: pulse 0.6s ease-in-out infinite alternate;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    filter:
-      brightness(1) drop-shadow(0 0 10px rgba(0, 255, 255, 0.7)) drop-shadow(0 0 20px rgba(0, 200, 255, 0.5)) drop-shadow(0 0 30px rgba(0, 150, 255, 0.3));
-  }
-
-  100% {
-    transform: scale(1.15);
-    filter:
-      brightness(1.4) drop-shadow(0 0 20px rgba(0, 255, 255, 0.9)) drop-shadow(0 0 40px rgba(0, 230, 255, 0.7)) drop-shadow(0 0 60px rgba(0, 200, 255, 0.5));
-  }
-}
-
-/* Positioning - Normal State */
+/* Original Positions */
 .reflection-image.top {
   top: 10%;
   left: 50%;
@@ -98,32 +79,44 @@ ion-content.hologram-container {
   transform: translateY(-50%) rotate(-90deg);
 }
 
-/* Positioning - Reversed State */
+/* Reversed State - Pure Vertical Flip */
 .reflection-base.reversed .reflection-image.top {
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%) scaleX(-1);
+  transform: translateX(-50%) scaleY(-1);
 }
 
 .reflection-base.reversed .reflection-image.right {
-  top: 50%;
-  right: 10%;
-  transform: translateY(-50%) rotate(90deg) scaleX(-1);
+  transform: translateY(-50%) rotate(90deg) scaleY(-1);
 }
 
 .reflection-base.reversed .reflection-image.bottom {
-  bottom: 10%;
-  left: 50%;
-  transform: translateX(-50%) scaleY(-1) scaleX(-1);
+  transform: translateX(-50%); /* Removes the flip to appear upright */
 }
 
 .reflection-base.reversed .reflection-image.left {
-  top: 50%;
-  left: 10%;
-  transform: translateY(-50%) rotate(-90deg) scaleX(-1);
+  transform: translateY(-50%) rotate(-90deg) scaleY(-1);
 }
 
-/* Center Image */
+/* Pulsing Animation Effect */
+.pulse-effect .reflection-image img {
+  animation: pulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  0% {
+    filter: 
+      brightness(1) 
+      drop-shadow(0 0 10px rgba(0, 255, 255, 0.7))
+      drop-shadow(0 0 20px rgba(0, 200, 255, 0.5));
+  }
+  100% {
+    filter: 
+      brightness(1.4) 
+      drop-shadow(0 0 20px rgba(0, 255, 255, 0.9))
+      drop-shadow(0 0 40px rgba(0, 230, 255, 0.7));
+  }
+}
+
+/* Center Reverse Button */
 .center-image {
   position: absolute;
   width: 10%;
@@ -132,10 +125,11 @@ ion-content.hologram-container {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 10;
-  filter:
-    drop-shadow(0 0 10px rgba(0, 255, 255, 0.7)) brightness(1.1);
-  transition: all 0.4s ease;
+  filter: 
+    drop-shadow(0 0 10px rgba(0, 255, 255, 0.7))
+    brightness(1.1);
   cursor: pointer;
+  transition: all 0.4s ease;
 }
 
 .pulse-effect .center-image {
@@ -145,14 +139,9 @@ ion-content.hologram-container {
 @keyframes centerPulse {
   0% {
     transform: translate(-50%, -50%) scale(1);
-    filter:
-      brightness(1.1) drop-shadow(0 0 10px rgba(0, 255, 255, 0.7));
   }
-
   100% {
     transform: translate(-50%, -50%) scale(1.2);
-    filter:
-      brightness(1.5) drop-shadow(0 0 25px rgba(0, 255, 255, 1));
   }
 }
 
@@ -162,91 +151,10 @@ ion-content.hologram-container {
     width: 115vmin;
     height: 115vmin;
     margin: 30vh auto 0;
-    left: 50%;
-    transform: translateX(-50%) translateY(-15%);
   }
-
-  /* Reflection image positioning */
-  .reflection-image {
-    position: absolute;
-    width: 20%;
-    height: 20%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  /* Base positions */
-  .reflection-image.top {
-    top: 10%;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  .reflection-image.right {
-    top: 50%;
-    right: 10%;
-    transform: translateY(-50%) rotate(90deg);
-  }
-
-  .reflection-image.bottom {
-    bottom: 10%;
-    left: 50%;
-    transform: translateX(-50%) rotate(180deg);
-  }
-
-  .reflection-image.left {
-    top: 50%;
-    left: 10%;
-    transform: translateY(-50%) rotate(270deg);
-  }
-
-  /* Mirror effect */
-  .reflection-image img.mirrored {
-    transform: scaleX(-1);
-  }
-
-  /* When reversed state is active */
-  .reflection-base.reversed .reflection-image.top {
-    top: 10%;
-    left: 50%;
-    transform: translateX(-50%) rotate(180deg);
-  }
-
-  .reflection-base.reversed .reflection-image.right {
-    top: 50%;
-    right: 10%;
-    transform: translateY(-50%) rotate(270deg);
-  }
-
-  .reflection-base.reversed .reflection-image.bottom {
-    bottom: 10%;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  .reflection-base.reversed .reflection-image.left {
-    top: 50%;
-    left: 10%;
-    transform: translateY(-50%) rotate(90deg);
-  }
-
-  .reflection-base.reversed .reflection-image img {
-    transform: scaleX(-1);
-  }
-
-  /* More pronounced effect on mobile */
-  @keyframes pulse {
-    0% {
-      transform: scale(1);
-      filter:
-        brightness(1) drop-shadow(0 0 15px rgba(0, 255, 255, 0.8)) drop-shadow(0 0 30px rgba(0, 200, 255, 0.6));
-    }
-
-    100% {
-      transform: scale(1.2);
-      filter:
-        brightness(1.5) drop-shadow(0 0 25px rgba(0, 255, 255, 1)) drop-shadow(0 0 50px rgba(0, 230, 255, 0.8));
-    }
+  
+  .center-image {
+    width: 35%;
+    height: 35%;
   }
 }
