@@ -190,3 +190,15 @@ ion-content.hologram-container {
     height: 35%;
   }
 }
+.reflection-image img {
+  width: 120%;
+  height: 120%;
+  object-fit: contain;
+  transition: all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+  filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.3));
+}
+
+/* Keep your existing pulse effect */
+.pulse-effect .reflection-image img {
+  animation: pulse 0.6s ease-in-out infinite alternate;
+}

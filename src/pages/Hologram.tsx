@@ -1,7 +1,7 @@
 import {
   IonContent, IonPage, IonHeader, IonToolbar,
   IonTitle, IonButtons, IonBackButton, useIonRouter,
-  useIonViewWillEnter, useIonViewWillLeave,IonButton
+  useIonViewWillEnter, useIonViewWillLeave
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -25,7 +25,6 @@ const DEFAULT_MODEL: HologramModel = {
 };
 
 const Hologram: React.FC = () => {
-  const [isReversed, setIsReversed] = useState(false);
   const location = useLocation<{ model?: HologramModel }>();
   const navigation = useIonRouter();
   const [selectedModel, setSelectedModel] = useState<HologramModel>(DEFAULT_MODEL);
@@ -34,9 +33,6 @@ const Hologram: React.FC = () => {
   const [isResponding, setIsResponding] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const handleReverse = () => {
-    setIsReversed(!isReversed);
-  };
 
   // Safe model loading
   useEffect(() => {
@@ -140,22 +136,13 @@ const Hologram: React.FC = () => {
             <IonBackButton defaultHref="/models" text="Back" />
           </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={handleReverse}>
-              <img
-                src={reverseImage}
-                alt="Reverse"
-                style={{ width: '24px', filter: 'invert(1)' }}
-              />
-            </IonButton>
-            <div style={{
-              color: isVoiceActive ? '#4CAF50' : '#ccc',
-              padding: '0 16px',
-              fontSize: '0.8rem'
-            }}>
-              {isVoiceActive ? 'Active' : 'Off'}
-            </div>
-          </IonButtons>
+          <div slot="end" style={{
+            color: isVoiceActive ? '#4CAF50' : '#ccc',
+            padding: '0 16px',
+            fontSize: '0.8rem'
+          }}>
+            {isVoiceActive ? 'Active' : 'Off'}
+          </div>
         </IonToolbar>
       </IonHeader>
 
@@ -172,28 +159,28 @@ const Hologram: React.FC = () => {
               <img
                 src={selectedModel.src}
                 alt="Top Reflection"
-                style={{ transform: isReversed ? 'translateX(-50%) scaleY(-1)' : 'translateX(-50%)' }}
+                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
               />
             </div>
             <div className="reflection-image right">
               <img
                 src={selectedModel.src}
                 alt="Right Reflection"
-                style={{ transform: isReversed ? 'translateY(-50%) rotate(270deg)' : 'translateY(-50%) rotate(90deg) scaleX(-1)' }}
+                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
               />
             </div>
             <div className="reflection-image bottom">
               <img
                 src={selectedModel.src}
                 alt="Bottom Reflection"
-                style={{ transform: isReversed ? 'translateX(-50%)' : 'translateX(-50%) scaleY(-1)' }}
+                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
               />
             </div>
             <div className="reflection-image left">
               <img
                 src={selectedModel.src}
                 alt="Left Reflection"
-                style={{ transform: isReversed ? 'translateY(-50%) rotate(90deg) scaleX(-1)' : 'translateY(-50%) rotate(270deg)' }}
+                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
               />
             </div>
           </div>
