@@ -1,7 +1,7 @@
 import {
   IonContent, IonPage, IonHeader, IonToolbar,
   IonTitle, IonButtons, IonBackButton, useIonRouter,
-  useIonViewWillEnter, useIonViewWillLeave
+  useIonViewWillEnter, useIonViewWillLeave,IonButton
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -140,13 +140,22 @@ const Hologram: React.FC = () => {
             <IonBackButton defaultHref="/models" text="Back" />
           </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
-          <div slot="end" style={{
-            color: isVoiceActive ? '#4CAF50' : '#ccc',
-            padding: '0 16px',
-            fontSize: '0.8rem'
-          }}>
-            {isVoiceActive ? 'Active' : 'Off'}
-          </div>
+          <IonButtons slot="end">
+            <IonButton onClick={handleReverse}>
+              <img
+                src={reverseImage}
+                alt="Reverse"
+                style={{ width: '24px', filter: 'invert(1)' }}
+              />
+            </IonButton>
+            <div style={{
+              color: isVoiceActive ? '#4CAF50' : '#ccc',
+              padding: '0 16px',
+              fontSize: '0.8rem'
+            }}>
+              {isVoiceActive ? 'Active' : 'Off'}
+            </div>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
