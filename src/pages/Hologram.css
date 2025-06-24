@@ -1,3 +1,4 @@
+/* Hologram.css */
 /* Solid Black Background */
 ion-content.hologram-container {
   --background: #000000;
@@ -42,7 +43,6 @@ ion-content.hologram-container {
   justify-content: center;
   align-items: center;
   background: transparent;
-  transform-origin: center center;
 }
 
 /* Image Styling */
@@ -79,53 +79,53 @@ ion-content.hologram-container {
 }
 
 /* Positioning - Normal State */
-.reflection-image.top:not(.reversed) {
+.reflection-image.top {
   top: 10%;
   left: 50%;
   transform: translateX(-50%);
 }
 
-.reflection-image.right:not(.reversed) {
+.reflection-image.right {
   top: 50%;
   right: 10%;
-  transform: translateY(-50%) rotate(90deg) scaleX(-1);
+  transform: translateY(-50%) rotate(90deg);
 }
 
-.reflection-image.bottom:not(.reversed) {
+.reflection-image.bottom {
   bottom: 10%;
   left: 50%;
   transform: translateX(-50%) scaleY(-1);
 }
 
-.reflection-image.left:not(.reversed) {
+.reflection-image.left {
   top: 50%;
   left: 10%;
-  transform: translateY(-50%) rotate(270deg);
+  transform: translateY(-50%) rotate(-90deg);
 }
 
 /* Positioning - Reversed State */
-.reflection-image.top.reversed {
-  bottom: 10%;
-  left: 50%;
-  transform: translateX(-50%) scaleY(-1);
-}
-
-.reflection-image.right.reversed {
-  top: 50%;
-  left: 10%;
-  transform: translateY(-50%) rotate(270deg);
-}
-
-.reflection-image.bottom.reversed {
+.reflection-base.reversed .reflection-image.top {
   top: 10%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scaleX(-1);
 }
 
-.reflection-image.left.reversed {
+.reflection-base.reversed .reflection-image.right {
   top: 50%;
   right: 10%;
   transform: translateY(-50%) rotate(90deg) scaleX(-1);
+}
+
+.reflection-base.reversed .reflection-image.bottom {
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%) scaleY(-1) scaleX(-1);
+}
+
+.reflection-base.reversed .reflection-image.left {
+  top: 50%;
+  left: 10%;
+  transform: translateY(-50%) rotate(-90deg) scaleX(-1);
 }
 
 /* Center Image */
@@ -178,33 +178,17 @@ ion-content.hologram-container {
     height: 22%;
   }
   
-  .reflection-image.top:not(.reversed) {
+  .reflection-image.top {
     top: 12%;
   }
-  .reflection-image.right:not(.reversed) {
+  .reflection-image.right {
     right: 11%;
-    transform: translateY(-50%) rotate(90deg) scaleX(-1) translateX(2px);
   }
-  .reflection-image.bottom:not(.reversed) {
+  .reflection-image.bottom {
     bottom: 12%;
   }
-  .reflection-image.left:not(.reversed) {
+  .reflection-image.left {
     left: 12%;
-  }
-
-  /* Reversed state mobile adjustments */
-  .reflection-image.top.reversed {
-    bottom: 12%;
-  }
-  .reflection-image.right.reversed {
-    left: 12%;
-  }
-  .reflection-image.bottom.reversed {
-    top: 12%;
-  }
-  .reflection-image.left.reversed {
-    right: 11%;
-    transform: translateY(-50%) rotate(90deg) scaleX(-1) translateX(2px);
   }
 
   .center-image {

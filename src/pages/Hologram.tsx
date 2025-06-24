@@ -60,46 +60,6 @@ const Hologram: React.FC = () => {
     setIsReversed(!isReversed);
   };
 
-  const getTransformStyle = (position: string) => {
-    const baseTransforms = {
-      top: 'translateX(-50%)',
-      right: 'translateY(-50%) rotate(90deg) scaleX(-1)',
-      bottom: 'translateX(-50%) scaleY(-1)',
-      left: 'translateY(-50%) rotate(270deg)'
-    };
-
-    if (!isReversed) return baseTransforms[position as keyof typeof baseTransforms];
-
-    const reversedTransforms = {
-      top: baseTransforms.bottom,
-      right: baseTransforms.left,
-      bottom: baseTransforms.top,
-      left: baseTransforms.right
-    };
-
-    return reversedTransforms[position as keyof typeof reversedTransforms];
-  };
-
-  const getPositionStyle = (position: string) => {
-    const basePositions = {
-      top: { top: '10%', left: '50%' },
-      right: { top: '50%', right: '10%' },
-      bottom: { bottom: '10%', left: '50%' },
-      left: { top: '50%', left: '10%' }
-    };
-
-    if (!isReversed) return basePositions[position as keyof typeof basePositions];
-
-    const reversedPositions = {
-      top: basePositions.bottom,
-      right: basePositions.left,
-      bottom: basePositions.top,
-      left: basePositions.right
-    };
-
-    return reversedPositions[position as keyof typeof reversedPositions];
-  };
-
   const handleVoiceCommand = useCallback(async (command: string) => {
     try {
       setIsResponding(true);
@@ -193,11 +153,11 @@ const Hologram: React.FC = () => {
             onClick={handleReverseClick}
             onError={(e) => console.error("Failed to load center image")}
           />
-          <div className="reflection-base">
+          <div className={`reflection-base ${isReversed ? 'reversed' : ''}`}>
             {['top', 'right', 'bottom', 'left'].map((position) => (
               <div
                 key={position}
-                className={`reflection-image ${position} ${isReversed ? 'reversed' : ''}`}
+                className={`reflection-image ${position}`}
               >
                 <img
                   src={selectedModel.src}
