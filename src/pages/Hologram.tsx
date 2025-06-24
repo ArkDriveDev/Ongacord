@@ -163,28 +163,28 @@ const Hologram: React.FC = () => {
               <img
                 src={selectedModel.src}
                 alt="Top Reflection"
-                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
+                style={{ transform: isReversed ? 'translateX(-50%) scaleY(-1)' : 'translateX(-50%)' }}
               />
             </div>
             <div className="reflection-image right">
               <img
                 src={selectedModel.src}
                 alt="Right Reflection"
-                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
+                style={{ transform: isReversed ? 'translateY(-50%) rotate(270deg)' : 'translateY(-50%) rotate(90deg) scaleX(-1)' }}
               />
             </div>
             <div className="reflection-image bottom">
               <img
                 src={selectedModel.src}
                 alt="Bottom Reflection"
-                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
+                style={{ transform: isReversed ? 'translateX(-50%)' : 'translateX(-50%) scaleY(-1)' }}
               />
             </div>
             <div className="reflection-image left">
               <img
                 src={selectedModel.src}
                 alt="Left Reflection"
-                onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
+                style={{ transform: isReversed ? 'translateY(-50%) rotate(90deg) scaleX(-1)' : 'translateY(-50%) rotate(270deg)' }}
               />
             </div>
           </div>
