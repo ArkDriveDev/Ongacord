@@ -41,20 +41,19 @@ const Hologram: React.FC = () => {
     }
   }, [location.state]);
 
-  const playHelloSound = () => {
-    if (audioRef.current) {
-      setIsResponding(true);
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(e => console.error("Audio play error:", e));
-
-      if (responseTimeoutRef.current) {
-        clearTimeout(responseTimeoutRef.current);
-      }
-      responseTimeoutRef.current = setTimeout(() => {
-        setIsResponding(false);
-      }, 2000);
-    }
-  };
+ const playHelloSound = () => {
+  if (audioRef.current) {
+    setIsResponding(true);
+    VoiceService.setSpeakingState(true); // Pause mic while playing sound
+    audioRef.current.currentTime = 0;
+    audioRef.current.play().catch(e => console.error("Audio play error:", e));
+    
+    audioRef.current.onended = () => {
+      setIsResponding(false);
+      VoiceService.setSpeakingState(false); // Resume mic
+    };
+  }
+};
 
   const handleReverseClick = () => {
     setIsReversed(!isReversed);
