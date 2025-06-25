@@ -4,12 +4,21 @@ class VoiceService {
   private isSpeaking = false;
   private onResultCallback: ((command: string) => void) | null = null;
   private restartTimeout: number | null = null;
+  
+  // Mobile-specific settings
+  private readonly MOBILE_SILENCE_THRESHOLD = 3000; // 3 seconds delay before restarting on silence
+  private readonly DESKTOP_SILENCE_THRESHOLD = 500; // Shorter delay for desktop
+  private readonly MIN_LISTENING_DURATION = 5000; // Minimum 5s listening session
 
   constructor() {
     this.initRecognition();
   }
 
-  private initRecognition() {
+  private isMobile(): boolean {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+
+  private initRecognition(): void {
     const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       console.error("Speech Recognition not supported");
@@ -17,54 +26,72 @@ class VoiceService {
     }
 
     this.recognition = new SpeechRecognition();
-    this.recognition.continuous = true; // Crucial for continuous listening
-    this.recognition.interimResults = false;
+    this.recognition.continuous = true;
+    this.recognition.interimResults = this.isMobile(); // Critical for mobile!
     this.recognition.lang = "en-US";
 
+    // Mobile-specific optimizations
+    if (this.isMobile() && 'webkitSpeechRecognition' in window) {
+      (this.recognition as any).stopTimeout = this.MIN_LISTENING_DURATION;
+    }
+
     this.recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.trim();
-      this.handleRecognitionResult(transcript.toLowerCase());
+      const result = event.results[event.results.length - 1];
+      if (result.isFinal) {
+        const transcript = result[0].transcript.trim();
+        this.handleRecognitionResult(transcript.toLowerCase());
+      }
     };
 
     this.recognition.onerror = (event) => {
       console.error("Recognition error:", (event as SpeechRecognitionErrorEvent).error);
-      this.scheduleRestart(); // Restart on errors
+      this.scheduleRestart();
     };
 
     this.recognition.onend = () => {
       if (this.isListening && !this.isSpeaking) {
-        this.scheduleRestart(); // Auto-restart when stopped
+        this.scheduleRestart();
       }
     };
   }
 
-  private scheduleRestart() {
+  private scheduleRestart(): void {
     if (this.restartTimeout) {
       clearTimeout(this.restartTimeout);
     }
+
+    // Use longer delays on mobile
+    const delay = this.isMobile() ? this.MOBILE_SILENCE_THRESHOLD : this.DESKTOP_SILENCE_THRESHOLD;
+    
     this.restartTimeout = window.setTimeout(() => {
       if (this.isListening && !this.isSpeaking) {
         this.safeStart();
       }
-    }, 300); // Short delay before restarting
+    }, delay);
   }
 
-  private safeStart() {
+  private safeStart(): void {
     try {
       if (this.recognition && this.isListening) {
         this.recognition.start();
+        console.log("Recognition restarted");
       }
     } catch (error) {
-      console.warn("Restart error - retrying:", error);
-      this.scheduleRestart();
+      console.warn("Restart error:", error);
+      this.scheduleRestart(); // Retry on failure
     }
   }
 
-  private handleRecognitionResult(transcript: string) {
+  private handleRecognitionResult(transcript: string): void {
+    if (this.isSpeaking) return; // Ignore results while speaking
+    
+    // Mobile-specific: ignore very short transcripts (noise)
+    if (this.isMobile() && transcript.length < 3) return;
+    
     this.onResultCallback?.(transcript);
   }
 
-  async startListening(onResult: (command: string) => void): Promise<boolean> {
+  public async startListening(onResult: (command: string) => void): Promise<boolean> {
     if (!this.recognition || this.isListening) return false;
 
     this.onResultCallback = onResult;
@@ -73,18 +100,29 @@ class VoiceService {
     return true;
   }
 
-  stopListening() {
+  public stopListening(): void {
     this.isListening = false;
     this.onResultCallback = null;
+    
     if (this.restartTimeout) {
       clearTimeout(this.restartTimeout);
+      this.restartTimeout = null;
     }
-    this.recognition?.stop();
+    
+    if (this.recognition) {
+      this.recognition.stop();
+    }
   }
 
-  setSpeakingState(speaking: boolean) {
+  public setSpeakingState(speaking: boolean): void {
     this.isSpeaking = speaking;
+    
+    // Auto-restart if stopping speech and listening is active
+    if (!speaking && this.isListening) {
+      this.scheduleRestart();
+    }
   }
 }
 
+// Singleton export
 export default new VoiceService();
