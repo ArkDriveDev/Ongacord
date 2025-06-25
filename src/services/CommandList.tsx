@@ -2,39 +2,43 @@ import { useIonRouter } from "@ionic/react";
 import hai from '../Responses/CuteResponse/hai.ogg';
 import womp from '../Responses/CuteResponse/womp.ogg';
 
-// Preloaded audio instances
-const audioCache: Record<string, HTMLAudioElement> = {
-  hai: new Audio(hai),
-  womp: new Audio(womp)
-};
+import VoiceService from './VoiceService';
 
-// Initialize audio
-Object.values(audioCache).forEach(audio => {
+const audioCache: Record<string, HTMLAudioElement> = {};
+
+const preloadAudio = (sound: string, url: string) => {
+  const audio = new Audio(url);
   audio.volume = 0.8;
   audio.preload = 'auto';
-});
+  audioCache[sound] = audio;
+};
+
+// Preload sounds
+preloadAudio('hai', hai);
+preloadAudio('womp', womp);
 
 const CommandList = async (command: string, navigation: ReturnType<typeof useIonRouter>) => {
   const processed = command.trim().toLowerCase();
   const sound = processed.includes("hello") ? 'hai' : 'womp';
 
   try {
-    // Get or create audio instance
+    VoiceService.setSpeakingState(true); // Pause mic while playing sound
+    
     const audio = audioCache[sound] || new Audio(sound === 'hai' ? hai : womp);
     audio.currentTime = 0;
     
-    await audio.play().catch(async (error) => {
-      console.warn("Playback failed, trying fallback:", error);
-      const fallback = new Audio(sound === 'hai' ? hai : womp);
-      await fallback.play();
-    });
+    await audio.play();
+    
+    audio.onended = () => {
+      VoiceService.setSpeakingState(false); // Resume mic
+    };
 
-    // Handle special commands
     if (processed.includes("go back")) {
       navigation.goBack();
     }
   } catch (error) {
     console.error("Audio error:", error);
+    VoiceService.setSpeakingState(false); // Ensure mic resumes on error
   }
 };
 
