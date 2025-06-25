@@ -22,21 +22,19 @@ const CommandList = async (command: string, navigation: ReturnType<typeof useIon
   const sound = processed.includes("hello") ? 'hai' : 'womp';
 
   try {
-    // Force mic off before any audio plays
-    VoiceService.setSpeakingState(true);
+    VoiceService.setSystemAudioState(true); // Mark system audio as playing
     
     const audio = audioCache[sound] || new Audio(sound === 'hai' ? hai : womp);
     audio.currentTime = 0;
     
-    // Create promise to wait for playback completion
     await new Promise<void>((resolve) => {
       audio.play();
       audio.onended = () => {
-        VoiceService.setSpeakingState(false); // Only turn mic back on after sound completes
+        VoiceService.setSystemAudioState(false); // Clear flag when done
         resolve();
       };
       audio.onerror = () => {
-        VoiceService.setSpeakingState(false); // Ensure mic comes back on error
+        VoiceService.setSystemAudioState(false);
         resolve();
       };
     });
@@ -45,9 +43,10 @@ const CommandList = async (command: string, navigation: ReturnType<typeof useIon
       navigation.goBack();
     }
   } catch (error) {
+    VoiceService.setSystemAudioState(false);
     console.error("Audio error:", error);
-    VoiceService.setSpeakingState(false);
   }
 };
+
 
 export default CommandList;
