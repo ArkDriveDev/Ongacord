@@ -16,7 +16,11 @@ class VoiceService {
   private cooldownTimeout: number | null = null;
   private readonly COOLDOWN_MS = 1500;
   private audioContext: AudioContext | null = null;
-  private gainNode: GainNode | null = null; // For muting system sounds
+  private gainNode: GainNode | null = null;
+  
+  // New: Cooldown for browser mic activation sounds
+  private readonly BROWSER_SOUND_COOLDOWN_MS = 3000;
+  private lastMicStartTime = 0;
 
   constructor() {
     this.initRecognition();
@@ -29,7 +33,7 @@ class VoiceService {
       if (AudioCtx) {
         this.audioContext = new AudioCtx();
         this.gainNode = this.audioContext.createGain();
-        this.gainNode.gain.value = 1.0; // Default volume
+        this.gainNode.gain.value = 1.0;
         this.gainNode.connect(this.audioContext.destination);
       }
     } catch (e) {
@@ -94,14 +98,27 @@ class VoiceService {
   }
 
   private shouldIgnoreInput(): boolean {
-    return this.isSpeaking || this.systemAudioPlaying;
+    // Ignore input during cooldown periods
+    const sinceLastMicStart = Date.now() - this.lastMicStartTime;
+    return (
+      this.isSpeaking || 
+      this.systemAudioPlaying ||
+      sinceLastMicStart < this.BROWSER_SOUND_COOLDOWN_MS
+    );
   }
 
   private safeRestart(): void {
+    const sinceLastStart = Date.now() - this.lastMicStartTime;
+    if (sinceLastStart < this.BROWSER_SOUND_COOLDOWN_MS) {
+      console.log("Skipping restart: Browser sound cooldown active");
+      return;
+    }
+
     try {
       if (this.recognition && this.isListening && !this.shouldIgnoreInput()) {
         this.recognition.start();
-        console.log("Mic restarted");
+        this.lastMicStartTime = Date.now();
+        console.log("Mic restarted (with cooldown protection)");
       }
     } catch (error) {
       console.warn("Restart failed, retrying...", error);
@@ -156,18 +173,15 @@ class VoiceService {
     }
   }
 
-  // NEW: Mute system sounds to prevent mic feedback
   public playSystemSound(soundUrl: string): void {
     if (!this.audioContext || !this.gainNode) return;
 
-    // 1. Mute output
+    // Mute output during playback
     this.gainNode.gain.value = 0;
     this.setSystemAudioState(true);
 
-    // 2. Play the sound
     const audio = new Audio(soundUrl);
     audio.play().then(() => {
-      // 3. Restore volume after sound ends
       audio.onended = () => {
         this.gainNode!.gain.value = 1.0;
         this.setSystemAudioState(false);
@@ -184,7 +198,8 @@ class VoiceService {
       isListening: this.isListening,
       isSpeaking: this.isSpeaking,
       systemAudioPlaying: this.systemAudioPlaying,
-      recognitionActive: (this.recognition as any)?.state as RecognitionState | undefined
+      recognitionActive: (this.recognition as any)?.state as RecognitionState | undefined,
+      lastMicStartTime: this.lastMicStartTime
     };
   }
 }
