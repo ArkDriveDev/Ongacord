@@ -55,6 +55,16 @@ const Hologram: React.FC = () => {
   }
 };
 
+useEffect(() => {
+  return () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      VoiceService.setSpeakingState(false); // Ensure mic resumes
+    }
+  };
+}, []);
+
   const handleReverseClick = () => {
     setIsReversed(!isReversed);
   };
