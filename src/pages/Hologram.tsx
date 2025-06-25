@@ -43,22 +43,19 @@ const Hologram: React.FC = () => {
 
  const playHelloSound = () => {
   if (audioRef.current) {
-    // Force mic off first
-    VoiceService.setSpeakingState(true);
+    VoiceService.setSystemAudioState(true); // Mark system audio as playing
     setIsResponding(true);
     
     audioRef.current.currentTime = 0;
     audioRef.current.play().catch(e => console.error("Audio play error:", e));
     
-    // Only turn mic back on after sound completes
     audioRef.current.onended = () => {
-      VoiceService.setSpeakingState(false);
+      VoiceService.setSystemAudioState(false);
       setIsResponding(false);
     };
     
-    // Ensure mic comes back on error too
     audioRef.current.onerror = () => {
-      VoiceService.setSpeakingState(false);
+      VoiceService.setSystemAudioState(false);
       setIsResponding(false);
     };
   }
