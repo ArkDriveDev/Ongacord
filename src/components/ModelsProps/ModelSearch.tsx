@@ -16,7 +16,7 @@ const ModelSearch: React.FC<ModelSearchProps> = ({ onSearch }) => {
 
   return (
     <IonSearchbar
-      style={{ width: '50%', marginTop: '30px', display: 'block' }}
+      style={{ width: '75%', marginTop: '30px', display: 'block' }}
       value={query}
       onIonInput={handleInput}
       placeholder="Search Model..."
