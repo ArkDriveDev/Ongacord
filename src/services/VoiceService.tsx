@@ -74,19 +74,33 @@ class VoiceService {
   }
 
   public setSpeakingState(speaking: boolean): void {
+    // Only update if state actually changed
+    if (this.isSpeaking === speaking) return;
+
     this.isSpeaking = speaking;
 
     if (speaking) {
-      // Immediate mic shutdown for playback
-      if (this.cooldownTimeout) clearTimeout(this.cooldownTimeout);
-      if (this.recognition) this.recognition.stop();
+      // Immediate and thorough mic shutdown
+      if (this.cooldownTimeout) {
+        clearTimeout(this.cooldownTimeout);
+        this.cooldownTimeout = null;
+      }
+      if (this.recognition) {
+        this.recognition.stop();
+      }
     } else {
-      // Delayed restart to avoid audio feedback
-      this.cooldownTimeout = window.setTimeout(() => {
-        if (this.isListening && !this.isSpeaking) {
-          this.safeRestart();
-        }
-      }, this.COOLDOWN_MS);
+      // Only restart if we're supposed to be listening
+      if (this.isListening) {
+        // Clear any pending restarts
+        if (this.cooldownTimeout) clearTimeout(this.cooldownTimeout);
+
+        // New restart with additional safety check
+        this.cooldownTimeout = window.setTimeout(() => {
+          if (this.isListening && !this.isSpeaking) {
+            this.safeRestart();
+          }
+        }, this.COOLDOWN_MS);
+      }
     }
   }
 }
