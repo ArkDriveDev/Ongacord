@@ -21,7 +21,7 @@ ion-content.hologram-container {
   height: 140vmin;
   max-width: 580px;
   max-height: 580px;
-  margin: 14vh auto 0;
+  margin: 12vh auto 0;
   transform: translateY(-10%);
 }
 
