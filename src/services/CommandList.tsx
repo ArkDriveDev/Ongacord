@@ -49,3 +49,5 @@ const CommandList = async (command: string, navigation: ReturnType<typeof useIon
     VoiceService.setSpeakingState(false);
   }
 };
+
+export default CommandList;
