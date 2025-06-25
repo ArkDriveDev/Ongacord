@@ -1,4 +1,3 @@
-// VoiceService.ts - Final Clean Version
 declare global {
   interface Window {
     webkitSpeechRecognition: typeof SpeechRecognition;
@@ -17,6 +16,7 @@ class VoiceService {
   private cooldownTimeout: number | null = null;
   private readonly COOLDOWN_MS = 1500;
   private audioContext: AudioContext | null = null;
+  private gainNode: GainNode | null = null; // For muting system sounds
 
   constructor() {
     this.initRecognition();
@@ -28,6 +28,9 @@ class VoiceService {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioCtx) {
         this.audioContext = new AudioCtx();
+        this.gainNode = this.audioContext.createGain();
+        this.gainNode.gain.value = 1.0; // Default volume
+        this.gainNode.connect(this.audioContext.destination);
       }
     } catch (e) {
       console.warn("AudioContext not supported:", e);
@@ -72,7 +75,7 @@ class VoiceService {
     };
   }
 
-   private applyAudioConstraints(): void {
+  private applyAudioConstraints(): void {
     try {
       const stream = (this.recognition as any).stream;
       if (stream) {
@@ -151,6 +154,29 @@ class VoiceService {
         }
       }, this.COOLDOWN_MS);
     }
+  }
+
+  // NEW: Mute system sounds to prevent mic feedback
+  public playSystemSound(soundUrl: string): void {
+    if (!this.audioContext || !this.gainNode) return;
+
+    // 1. Mute output
+    this.gainNode.gain.value = 0;
+    this.setSystemAudioState(true);
+
+    // 2. Play the sound
+    const audio = new Audio(soundUrl);
+    audio.play().then(() => {
+      // 3. Restore volume after sound ends
+      audio.onended = () => {
+        this.gainNode!.gain.value = 1.0;
+        this.setSystemAudioState(false);
+      };
+    }).catch(e => {
+      console.error("Sound playback failed:", e);
+      this.gainNode!.gain.value = 1.0;
+      this.setSystemAudioState(false);
+    });
   }
 
   public getState() {
