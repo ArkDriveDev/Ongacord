@@ -160,7 +160,7 @@ ion-content.hologram-container {
   .hologram-center {
     width: 115vmin;
     height: 115vmin;
-    margin: 30vh auto 0;
+    margin: 28vh auto 0;
     left: 50%;
     transform: translateX(-50%) translateY(-15%);
   }
