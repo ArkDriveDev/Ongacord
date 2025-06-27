@@ -1,10 +1,10 @@
-import { 
+import {
   IonContent, IonHeader, IonPage, IonTitle, IonToolbar,
   IonGrid, IonRow, IonCol, IonCard, IonCardContent, IonImg,
   IonButton
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ModelSearch from '../components/ModelsProps/ModelSearch';
 
 // Import all images directly
@@ -38,16 +38,36 @@ const Models: React.FC = () => {
   const history = useHistory();
   const [searchQuery, setSearchQuery] = useState('');
 
- const handleModelClick = (model: ImageData) => {
-  if (document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
-  }
-  
-  history.push({
-    pathname: '/hologram',
-    state: { model }
-  });
-};
+  useEffect(() => {
+     const observer = new MutationObserver((mutations) => {
+       mutations.forEach((mutation) => {
+         if (mutation.type === 'attributes' &&
+           mutation.attributeName === 'aria-hidden' &&
+           mutation.target instanceof HTMLElement &&
+           mutation.target.id === 'main-content') {
+           mutation.target.removeAttribute('aria-hidden');
+         }
+       });
+     });
+ 
+     const mainContent = document.getElementById('main-content');
+     if (mainContent) {
+       observer.observe(mainContent, { attributes: true });
+     }
+ 
+     return () => observer.disconnect();
+   }, []);
+
+  const handleModelClick = (model: ImageData) => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
+    history.push({
+      pathname: '/hologram',
+      state: { model }
+    });
+  };
 
   const filteredImages = APP_IMAGES.filter(image =>
     image.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -60,10 +80,10 @@ const Models: React.FC = () => {
           <IonTitle>3D Models</IonTitle>
         </IonToolbar>
       </IonHeader>
-      
+
       <IonContent>
         <ModelSearch onSearch={setSearchQuery} />
-        
+
         <IonGrid style={{ paddingTop: '20px' }}>
           {filteredImages.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -74,27 +94,27 @@ const Models: React.FC = () => {
               <IonRow key={rowIndex}>
                 {filteredImages.slice(rowIndex * 4, rowIndex * 4 + 4).map((image) => (
                   <IonCol size="6" size-md="3" key={image.id}>
-                    <IonCard 
-                      button 
+                    <IonCard
+                      button
                       onClick={() => handleModelClick(image)}
-                      style={{ 
+                      style={{
                         height: '100%',
                         margin: '8px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                       }}
                     >
                       <IonCardContent style={{ textAlign: 'center' }}>
-                        <IonImg 
-                          src={image.src} 
+                        <IonImg
+                          src={image.src}
                           alt={image.name}
-                          style={{ 
-                            width: '100%', 
-                            height: '150px', 
+                          style={{
+                            width: '100%',
+                            height: '150px',
                             objectFit: 'contain',
                             padding: '10px'
                           }}
                         />
-                        <h3 style={{ 
+                        <h3 style={{
                           margin: '10px 0 5px',
                           fontSize: '1rem',
                           color: '#333'
