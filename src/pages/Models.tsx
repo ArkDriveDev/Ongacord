@@ -38,12 +38,16 @@ const Models: React.FC = () => {
   const history = useHistory();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const handleModelClick = (model: ImageData) => {
-    history.push({
-      pathname: '/hologram',
-      state: { model }
-    });
-  };
+ const handleModelClick = (model: ImageData) => {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+  
+  history.push({
+    pathname: '/hologram',
+    state: { model }
+  });
+};
 
   const filteredImages = APP_IMAGES.filter(image =>
     image.name.toLowerCase().includes(searchQuery.toLowerCase())

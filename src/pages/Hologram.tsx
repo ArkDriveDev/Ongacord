@@ -94,39 +94,45 @@ useEffect(() => {
     }
   }, [navigation]);
 
-  useIonViewWillEnter(() => {
-    audioRef.current = new Audio(hello);
-    audioRef.current.preload = 'auto';
+useIonViewWillEnter(() => {
+  // [NEW] Add this focus management at the VERY START
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
 
-    const initialize = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
-        setPermissionGranted(true);
+  // [KEEP ALL YOUR EXISTING CODE BELOW] 
+  audioRef.current = new Audio(hello);
+  audioRef.current.preload = 'auto';
 
-        const started = await VoiceService.startListening(handleVoiceCommand);
-        setIsVoiceActive(started);
+  const initialize = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      setPermissionGranted(true);
 
-        if (started) {
-          playHelloSound();
-        }
-      } catch (error) {
-        console.error("Voice init error:", error);
-        setPermissionGranted(false);
-        setIsVoiceActive(false);
+      const started = await VoiceService.startListening(handleVoiceCommand);
+      setIsVoiceActive(started);
+
+      if (started) {
+        playHelloSound();
       }
-    };
-    initialize();
-
-    if (audioRef.current) {
-      audioRef.current.onended = () => {
-        setIsResponding(false);
-      };
-      audioRef.current.onplay = () => {
-        setIsResponding(true);
-      };
+    } catch (error) {
+      console.error("Voice init error:", error);
+      setPermissionGranted(false);
+      setIsVoiceActive(false);
     }
-  });
+  };
+  initialize();
+
+  if (audioRef.current) {
+    audioRef.current.onended = () => {
+      setIsResponding(false);
+    };
+    audioRef.current.onplay = () => {
+      setIsResponding(true);
+    };
+  }
+});
 
   useIonViewWillLeave(() => {
     VoiceService.stopListening();
