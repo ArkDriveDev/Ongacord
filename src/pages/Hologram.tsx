@@ -36,10 +36,8 @@ const Hologram: React.FC = () => {
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (location.state?.model) {
-      setSelectedModel(location.state.model);
-    }
-  }, [location.state]);
+  setSelectedModel(location.state?.model || DEFAULT_MODEL);
+}, [location.state]);
 
  const playHelloSound = () => {
   if (audioRef.current) {
