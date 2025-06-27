@@ -1,7 +1,7 @@
 import {
   IonContent, IonPage, IonHeader, IonToolbar,
   IonTitle, IonButtons, IonBackButton, useIonRouter,
-  useIonViewWillEnter, useIonViewWillLeave
+  useIonViewWillEnter, useIonViewWillLeave,useIonViewDidEnter
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -36,38 +36,38 @@ const Hologram: React.FC = () => {
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-  setSelectedModel(location.state?.model || DEFAULT_MODEL);
-}, [location.state]);
+    setSelectedModel(location.state?.model || DEFAULT_MODEL);
+  }, [location.state]);
 
- const playHelloSound = () => {
-  if (audioRef.current) {
-    VoiceService.setSystemAudioState(true); // Mark system audio as playing
-    setIsResponding(true);
-    
-    audioRef.current.currentTime = 0;
-    audioRef.current.play().catch(e => console.error("Audio play error:", e));
-    
-    audioRef.current.onended = () => {
-      VoiceService.setSystemAudioState(false);
-      setIsResponding(false);
-    };
-    
-    audioRef.current.onerror = () => {
-      VoiceService.setSystemAudioState(false);
-      setIsResponding(false);
-    };
-  }
-};
-
-useEffect(() => {
-  return () => {
+  const playHelloSound = () => {
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = '';
-      VoiceService.setSpeakingState(false); // Ensure mic resumes
+      VoiceService.setSystemAudioState(true); // Mark system audio as playing
+      setIsResponding(true);
+
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => console.error("Audio play error:", e));
+
+      audioRef.current.onended = () => {
+        VoiceService.setSystemAudioState(false);
+        setIsResponding(false);
+      };
+
+      audioRef.current.onerror = () => {
+        VoiceService.setSystemAudioState(false);
+        setIsResponding(false);
+      };
     }
   };
-}, []);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        VoiceService.setSpeakingState(false); // Ensure mic resumes
+      }
+    };
+  }, []);
 
   const handleReverseClick = () => {
     setIsReversed(!isReversed);
@@ -92,45 +92,45 @@ useEffect(() => {
     }
   }, [navigation]);
 
-useIonViewWillEnter(() => {
-  // [NEW] Add this focus management at the VERY START
-  if (document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
-  }
-
-  // [KEEP ALL YOUR EXISTING CODE BELOW] 
-  audioRef.current = new Audio(hello);
-  audioRef.current.preload = 'auto';
-
-  const initialize = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop());
-      setPermissionGranted(true);
-
-      const started = await VoiceService.startListening(handleVoiceCommand);
-      setIsVoiceActive(started);
-
-      if (started) {
-        playHelloSound();
-      }
-    } catch (error) {
-      console.error("Voice init error:", error);
-      setPermissionGranted(false);
-      setIsVoiceActive(false);
+  useIonViewWillEnter(() => {
+    // [NEW] Add this focus management at the VERY START
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
     }
-  };
-  initialize();
 
-  if (audioRef.current) {
-    audioRef.current.onended = () => {
-      setIsResponding(false);
+    // [KEEP ALL YOUR EXISTING CODE BELOW] 
+    audioRef.current = new Audio(hello);
+    audioRef.current.preload = 'auto';
+
+    const initialize = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+        setPermissionGranted(true);
+
+        const started = await VoiceService.startListening(handleVoiceCommand);
+        setIsVoiceActive(started);
+
+        if (started) {
+          playHelloSound();
+        }
+      } catch (error) {
+        console.error("Voice init error:", error);
+        setPermissionGranted(false);
+        setIsVoiceActive(false);
+      }
     };
-    audioRef.current.onplay = () => {
-      setIsResponding(true);
-    };
-  }
-});
+    initialize();
+
+    if (audioRef.current) {
+      audioRef.current.onended = () => {
+        setIsResponding(false);
+      };
+      audioRef.current.onplay = () => {
+        setIsResponding(true);
+      };
+    }
+  });
 
   useIonViewWillLeave(() => {
     VoiceService.stopListening();
@@ -145,6 +145,14 @@ useIonViewWillEnter(() => {
     }
   });
 
+useIonViewDidEnter(() => {
+  // Ionic sometimes keeps previous pages in DOM
+  const hiddenPages = document.querySelectorAll('.ion-page-hidden');
+  hiddenPages.forEach(page => {
+    page.setAttribute('inert', '');
+    page.removeAttribute('aria-hidden');
+  });
+});
   return (
     <IonPage style={{ backgroundColor: 'black' }}>
       <IonHeader>
