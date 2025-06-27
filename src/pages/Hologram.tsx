@@ -1,7 +1,7 @@
 import {
   IonContent, IonPage, IonHeader, IonToolbar,
   IonTitle, IonButtons, IonBackButton, useIonRouter,
-  useIonViewWillEnter, useIonViewWillLeave,useIonViewDidEnter
+  useIonViewWillEnter, useIonViewWillLeave, useIonViewDidEnter
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -34,6 +34,26 @@ const Hologram: React.FC = () => {
   const [isReversed, setIsReversed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' &&
+          mutation.attributeName === 'aria-hidden' &&
+          mutation.target instanceof HTMLElement &&
+          mutation.target.id === 'main-content') {
+          mutation.target.removeAttribute('aria-hidden');
+        }
+      });
+    });
+
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      observer.observe(mainContent, { attributes: true });
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     setSelectedModel(location.state?.model || DEFAULT_MODEL);
@@ -145,14 +165,14 @@ const Hologram: React.FC = () => {
     }
   });
 
-useIonViewDidEnter(() => {
-  // Ionic sometimes keeps previous pages in DOM
-  const hiddenPages = document.querySelectorAll('.ion-page-hidden');
-  hiddenPages.forEach(page => {
-    page.setAttribute('inert', '');
-    page.removeAttribute('aria-hidden');
+  useIonViewDidEnter(() => {
+    // Ionic sometimes keeps previous pages in DOM
+    const hiddenPages = document.querySelectorAll('.ion-page-hidden');
+    hiddenPages.forEach(page => {
+      page.setAttribute('inert', '');
+      page.removeAttribute('aria-hidden');
+    });
   });
-});
   return (
     <IonPage style={{ backgroundColor: 'black' }}>
       <IonHeader>
