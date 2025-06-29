@@ -1,7 +1,6 @@
 import { useIonRouter } from "@ionic/react";
 import hai from '../Responses/CuteResponse/hai.ogg';
 import womp from '../Responses/CuteResponse/womp.ogg';
-
 import VoiceService from './VoiceService';
 
 const audioCache: Record<string, HTMLAudioElement> = {};
@@ -39,14 +38,10 @@ const CommandList = async (command: string, navigation: ReturnType<typeof useIon
       };
     });
 
-    if (processed.includes("go back")) {
-      navigation.goBack();
-    }
   } catch (error) {
     VoiceService.setSystemAudioState(false);
     console.error("Audio error:", error);
   }
 };
-
 
 export default CommandList;
