@@ -1,6 +1,6 @@
 import {
   IonContent, IonPage, IonHeader, IonToolbar,
-  IonTitle, IonButtons, IonBackButton, useIonRouter,
+  IonTitle, IonButtons, IonBackButton,
   useIonViewWillEnter, useIonViewWillLeave, useIonViewDidEnter
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
@@ -26,7 +26,6 @@ const DEFAULT_MODEL: HologramModel = {
 
 const Hologram: React.FC = () => {
   const location = useLocation<{ model?: HologramModel }>();
-  const navigation = useIonRouter();
   const [selectedModel, setSelectedModel] = useState<HologramModel>(DEFAULT_MODEL);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
@@ -61,7 +60,7 @@ const Hologram: React.FC = () => {
 
   const playHelloSound = () => {
     if (audioRef.current) {
-      VoiceService.setSystemAudioState(true); // Mark system audio as playing
+      VoiceService.setSystemAudioState(true);
       setIsResponding(true);
 
       audioRef.current.currentTime = 0;
@@ -84,7 +83,7 @@ const Hologram: React.FC = () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = '';
-        VoiceService.setSpeakingState(false); // Ensure mic resumes
+        VoiceService.setSpeakingState(false);
       }
     };
   }, []);
@@ -101,7 +100,7 @@ const Hologram: React.FC = () => {
         clearTimeout(responseTimeoutRef.current);
       }
 
-      await CommandList(command, navigation);
+      await CommandList(command);
 
       responseTimeoutRef.current = setTimeout(() => {
         setIsResponding(false);
@@ -110,15 +109,13 @@ const Hologram: React.FC = () => {
       console.error("Command error:", error);
       setIsResponding(false);
     }
-  }, [navigation]);
+  }, []);
 
   useIonViewWillEnter(() => {
-    // [NEW] Add this focus management at the VERY START
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
 
-    // [KEEP ALL YOUR EXISTING CODE BELOW] 
     audioRef.current = new Audio(hello);
     audioRef.current.preload = 'auto';
 
@@ -166,13 +163,13 @@ const Hologram: React.FC = () => {
   });
 
   useIonViewDidEnter(() => {
-    // Ionic sometimes keeps previous pages in DOM
     const hiddenPages = document.querySelectorAll('.ion-page-hidden');
     hiddenPages.forEach(page => {
       page.setAttribute('inert', '');
       page.removeAttribute('aria-hidden');
     });
   });
+
   return (
     <IonPage style={{ backgroundColor: 'black' }}>
       <IonHeader>

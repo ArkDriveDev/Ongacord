@@ -1,4 +1,3 @@
-import { useIonRouter } from "@ionic/react";
 import hai from '../Responses/CuteResponse/hai.ogg';
 import womp from '../Responses/CuteResponse/womp.ogg';
 import VoiceService from './VoiceService';
@@ -16,12 +15,12 @@ const preloadAudio = (sound: string, url: string) => {
 preloadAudio('hai', hai);
 preloadAudio('womp', womp);
 
-const CommandList = async (command: string, navigation: ReturnType<typeof useIonRouter>) => {
+const CommandList = async (command: string) => {  // Removed navigation parameter
   const processed = command.trim().toLowerCase();
   const sound = processed.includes("hello") ? 'hai' : 'womp';
 
   try {
-    VoiceService.setSystemAudioState(true); // Mark system audio as playing
+    VoiceService.setSystemAudioState(true);
     
     const audio = audioCache[sound] || new Audio(sound === 'hai' ? hai : womp);
     audio.currentTime = 0;
@@ -29,7 +28,7 @@ const CommandList = async (command: string, navigation: ReturnType<typeof useIon
     await new Promise<void>((resolve) => {
       audio.play();
       audio.onended = () => {
-        VoiceService.setSystemAudioState(false); // Clear flag when done
+        VoiceService.setSystemAudioState(false);
         resolve();
       };
       audio.onerror = () => {
