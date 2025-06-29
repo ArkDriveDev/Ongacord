@@ -17,6 +17,9 @@ import JellyFish2 from '../images/JellyFish2.gif';
 import JellyFish3 from '../images/JellyFish3.gif';
 import JellyFish4 from '../images/JellyFish4.gif';
 import AlladV from '../images/Allad V.gif';
+import Octavia from '../images/Octavia_Agile_Unarmed.gif';
+import Drifter from '../images/Drifter.gif';
+import Citrine from '../images/Citrine_Agile_Unarmed.gif';
 
 interface ImageData {
   id: number;
@@ -34,6 +37,9 @@ const APP_IMAGES: ImageData[] = [
   { id: 7, name: 'Jelly Fish 3', src: JellyFish3 },
   { id: 8, name: 'Jelly Fish 4', src: JellyFish4 },
   { id: 9, name: 'Allad V', src: AlladV },
+  { id: 10, name: 'Octavia', src: Octavia },
+  { id: 11, name: 'Drifter', src: Drifter },
+  { id: 12, name: 'Citrine', src: Citrine },
 ];
 
 const Models: React.FC = () => {
