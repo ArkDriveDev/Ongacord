@@ -177,9 +177,6 @@ const Hologram: React.FC = () => {
     <IonPage style={{ backgroundColor: 'black' }}>
       <IonHeader>
         <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/models" text="Back" />
-          </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
           <div slot="end" style={{
             color: isVoiceActive ? '#4CAF50' : '#ccc',
