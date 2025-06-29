@@ -16,6 +16,7 @@ import JellyFish1 from '../images/JellyFish1.gif';
 import JellyFish2 from '../images/JellyFish2.gif';
 import JellyFish3 from '../images/JellyFish3.gif';
 import JellyFish4 from '../images/JellyFish4.gif';
+import AlladV from '../images/Allad V.gif';
 
 interface ImageData {
   id: number;
@@ -32,6 +33,7 @@ const APP_IMAGES: ImageData[] = [
   { id: 6, name: 'Jelly Fish 2', src: JellyFish2 },
   { id: 7, name: 'Jelly Fish 3', src: JellyFish3 },
   { id: 8, name: 'Jelly Fish 4', src: JellyFish4 },
+  { id: 9, name: 'Allad V', src: AlladV },
 ];
 
 const Models: React.FC = () => {
