@@ -1,4 +1,4 @@
-// VoiceService.ts - Final Clean Version
+// VoiceService.ts - Final Fixed Version
 declare global {
   interface Window {
     webkitSpeechRecognition: typeof SpeechRecognition;
@@ -17,6 +17,9 @@ class VoiceService {
   private cooldownTimeout: number | null = null;
   private readonly COOLDOWN_MS = 1500;
   private audioContext: AudioContext | null = null;
+  private restartAttempts = 0;
+  private readonly MAX_RESTART_ATTEMPTS = 3;
+  private isRestarting = false;
 
   constructor() {
     this.initRecognition();
@@ -25,7 +28,7 @@ class VoiceService {
 
   private initAudioContext(): void {
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) {
         this.audioContext = new AudioCtx();
       }
@@ -35,7 +38,7 @@ class VoiceService {
   }
 
   private initRecognition(): void {
-    const SpeechRecog = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecog = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecog) {
       console.error("Speech Recognition not supported");
       return;
@@ -45,34 +48,39 @@ class VoiceService {
     this.recognition.continuous = true;
     this.recognition.interimResults = false;
     this.recognition.lang = "en-US";
+    this.recognition.maxAlternatives = 1;
 
     this.recognition.onaudiostart = () => {
       this.applyAudioConstraints();
     };
 
-    this.recognition.onresult = (event: any) => {
+    this.recognition.onresult = (event: SpeechRecognitionEvent) => {
       if (this.shouldIgnoreInput()) return;
       const results = event.results[event.results.length - 1];
       if (results.isFinal) {
         const transcript = results[0].transcript.trim().toLowerCase();
-        console.log("Processed command:", transcript);
+        console.log("Voice command detected:", transcript);
         this.onResultCallback?.(transcript);
       }
     };
 
-    this.recognition.onerror = (event: any) => {
-      console.error("Recognition error:", event.error);
+    this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      // Ignore these common non-critical errors
+      const ignorableErrors = ['no-speech', 'audio-capture'];
+      if (!ignorableErrors.includes(event.error)) {
+        console.error("Recognition error:", event.error);
+      }
       this.safeRestart();
     };
 
     this.recognition.onend = () => {
-      if (this.isListening && !this.shouldIgnoreInput()) {
+      if (this.isListening && !this.shouldIgnoreInput() && !this.isRestarting) {
         this.safeRestart();
       }
     };
   }
 
-   private applyAudioConstraints(): void {
+  private applyAudioConstraints(): void {
     try {
       const stream = (this.recognition as any).stream;
       if (stream) {
@@ -94,34 +102,85 @@ class VoiceService {
     return this.isSpeaking || this.systemAudioPlaying;
   }
 
-  private safeRestart(): void {
+  private getRecognitionState(): RecognitionState {
+    if (!this.recognition) return 'inactive';
+    return (this.recognition as any).state || 'inactive';
+  }
+
+  private async safeRestart(): Promise<void> {
+    if (this.isRestarting) return;
+    this.isRestarting = true;
+
     try {
-      if (this.recognition && this.isListening && !this.shouldIgnoreInput()) {
+      if (!this.recognition || !this.isListening || this.shouldIgnoreInput()) {
+        return;
+      }
+
+      const currentState = this.getRecognitionState();
+      if (currentState === 'running') {
+        return;
+      }
+
+      // Ensure clean stop before restart
+      if (currentState !== 'inactive') {
+        this.recognition.stop();
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      if (this.isListening && !this.shouldIgnoreInput()) {
         this.recognition.start();
-        console.log("Mic restarted");
+        this.restartAttempts = 0;
+        console.debug("Recognition restarted successfully");
       }
     } catch (error) {
-      console.warn("Restart failed, retrying...", error);
-      setTimeout(() => this.safeRestart(), 1000);
+      console.warn("Restart attempt failed:", error);
+      this.restartAttempts++;
+      
+      if (this.restartAttempts <= this.MAX_RESTART_ATTEMPTS) {
+        const delay = Math.min(1000 * this.restartAttempts, 5000);
+        setTimeout(() => this.safeRestart(), delay);
+      } else {
+        console.error("Max restart attempts reached. Stopping...");
+        this.stopListening();
+      }
+    } finally {
+      this.isRestarting = false;
     }
   }
 
   public async startListening(onResult: (command: string) => void): Promise<boolean> {
     if (!this.recognition) return false;
+
     this.onResultCallback = onResult;
     this.isListening = true;
-    this.safeRestart();
-    return true;
+    this.restartAttempts = 0;
+    
+    try {
+      await this.safeRestart();
+      return true;
+    } catch (error) {
+      console.error("Failed to start listening:", error);
+      return false;
+    }
   }
 
   public stopListening(): void {
     this.isListening = false;
     this.onResultCallback = null;
+    this.restartAttempts = 0;
+    
     if (this.cooldownTimeout) {
       clearTimeout(this.cooldownTimeout);
       this.cooldownTimeout = null;
     }
-    if (this.recognition) this.recognition.stop();
+    
+    if (this.recognition) {
+      try {
+        this.recognition.stop();
+      } catch (error) {
+        console.warn("Error while stopping recognition:", error);
+      }
+    }
   }
 
   public setSpeakingState(speaking: boolean): void {
@@ -142,9 +201,17 @@ class VoiceService {
         clearTimeout(this.cooldownTimeout);
         this.cooldownTimeout = null;
       }
-      if (this.recognition) this.recognition.stop();
+      if (this.recognition) {
+        try {
+          this.recognition.stop();
+        } catch (error) {
+          console.warn("Error stopping recognition:", error);
+        }
+      }
     } else if (this.isListening) {
-      if (this.cooldownTimeout) clearTimeout(this.cooldownTimeout);
+      if (this.cooldownTimeout) {
+        clearTimeout(this.cooldownTimeout);
+      }
       this.cooldownTimeout = window.setTimeout(() => {
         if (this.isListening && !this.shouldIgnoreInput()) {
           this.safeRestart();
@@ -158,7 +225,7 @@ class VoiceService {
       isListening: this.isListening,
       isSpeaking: this.isSpeaking,
       systemAudioPlaying: this.systemAudioPlaying,
-      recognitionActive: (this.recognition as any)?.state as RecognitionState | undefined
+      recognitionActive: this.getRecognitionState()
     };
   }
 }
