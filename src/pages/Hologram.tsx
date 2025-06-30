@@ -34,6 +34,8 @@ const Hologram: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const wanyaSound = new Audio(wanya);
+  const [isModelChanging, setIsModelChanging] = useState(false);
+  const [modelChangeTimeout, setModelChangeTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
