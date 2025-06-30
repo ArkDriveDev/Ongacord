@@ -2,7 +2,7 @@
 import hai from '../Responses/CuteResponse/hai.ogg';
 import womp from '../Responses/CuteResponse/womp.ogg';
 import hi from '../Responses/CuteResponse/Hi.mp3';
-import womp2x from '../Responses/CuteResponse/womp.ogg';
+import pikmin from '../Responses/CuteResponse/Pikmin.mp3';
 import { findModelByName, ImageData } from './ModelsService';
 import VoiceService from './VoiceService';
 
@@ -21,7 +21,7 @@ const preloadAudio = (sound: string, url: string) => {
 preloadAudio('hai', hai);
 preloadAudio('womp', womp);
 preloadAudio('hi', hi);
-preloadAudio('womp2x', womp2x);
+preloadAudio('pikmin', pikmin);
 
 const playAudio = async (sound: string): Promise<void> => {
   try {
@@ -59,7 +59,7 @@ export const CommandList = async (command: string): Promise<{
     const modelName = await initiateModelChange();
     
     if (!modelName) {
-      await playAudio('womp2x');
+      await playAudio('pikmin');
       return { action: 'timeout' };
     }
 
@@ -68,7 +68,7 @@ export const CommandList = async (command: string): Promise<{
       return { action: 'changeModel', model };
     }
 
-    await playAudio('womp2x');
+    await playAudio('pikmin');
     return { action: 'invalidModel' };
   }
 

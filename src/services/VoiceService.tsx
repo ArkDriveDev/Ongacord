@@ -63,7 +63,7 @@ class VoiceService {
       if (this.shouldIgnoreInput()) return;
       const results = event.results[event.results.length - 1];
       if (results.isFinal) {
-        const transcript = results[0].transcript.trim().toLowerCase();
+        const transcript = results[0].transcript.trim();
         console.log("Voice command detected:", transcript);
 
         if (this.isExpectingModel) {

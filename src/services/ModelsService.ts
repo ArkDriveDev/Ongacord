@@ -1,3 +1,11 @@
+// src/services/ModelsService.ts
+export interface ImageData { 
+  id: number;
+  name: string;
+  src: string;
+}
+
+// Import images directly
 import Orb1 from '../images/Orb1.gif';
 import Orb2 from '../images/Orb2.gif';
 import Orb3 from '../images/Orb3.gif';
@@ -7,69 +15,40 @@ import JellyFish2 from '../images/JellyFish2.gif';
 import JellyFish3 from '../images/JellyFish3.gif';
 import JellyFish4 from '../images/JellyFish4.gif';
 
-export interface ImageData {
-  id: number;
-  name: string;
-  src: string;
-  searchTerms: string[]; // Added for better voice matching
-}
-
 const LOCAL_MODELS: ImageData[] = [
-  {
-    id: 1,
-    name: 'Orb One',
-    src: Orb1,
-    searchTerms: ['orb one', 'orb 1', 'orb1', 'one', '1']
-  },
-  {
-    id: 2,
-    name: 'Orb Two', 
-    src: Orb2,
-    searchTerms: ['orb two', 'orb 2', 'orb2', 'two', '2']
-  },
-  {
-    id: 3,
-    name: 'Orb Three',
-    src: Orb3,
-    searchTerms: ['orb three', 'orb 3', 'orb3', 'three', '3']
-  },
-  {
-    id: 4,
-    name: 'Orb Four',
-    src: Orb4,
-    searchTerms: ['orb four', 'orb 4', 'orb4', 'four', '4']
-  },
-  {
-    id: 5,
-    name: 'Jelly Fish One',
-    src: JellyFish1,
-    searchTerms: ['jelly fish one', 'jelly 1', 'jellyfish one', 'jelly one']
-  },
-  // ... similar for other jelly fish models
+  { id: 1, name: 'Orb one', src: Orb1 },
+  { id: 2, name: 'Orb two', src: Orb2 },
+  { id: 3, name: 'Orb three', src: Orb3 },
+  { id: 4, name: 'Orb four', src: Orb4 },
+  { id: 5, name: 'Jelly Fish one', src: JellyFish1 },
+  { id: 6, name: 'Jellyfish 2.', src: JellyFish2 },
+  { id: 7, name: 'Jelly Fish three', src: JellyFish3 },
+  { id: 8, name: 'Jelly Fish four', src: JellyFish4 },
 ];
 
+// Rest of your existing code remains the same...
 export const fetchAvailableModels = async (): Promise<ImageData[]> => {
   return Promise.resolve(LOCAL_MODELS);
 };
 
 export const findModelByName = async (name: string): Promise<ImageData | null> => {
   const models = await fetchAvailableModels();
-  const normalizedInput = name.toLowerCase().trim().replace(/\s+/g, ' ');
-
-  // Check against all search terms
-  for (const model of models) {
-    for (const term of model.searchTerms) {
-      if (normalizedInput.includes(term) || term.includes(normalizedInput)) {
-        console.log(`Matched "${normalizedInput}" to model "${model.name}" via term "${term}"`);
-        return model;
-      }
-    }
-  }
-
-  console.warn(`No model found for "${normalizedInput}"`);
-  return null;
+  const normalizedInput = name.toLowerCase().trim();
+  
+  // Try exact match first
+  const exactMatch = models.find(m => m.name.toLowerCase() === normalizedInput);
+  if (exactMatch) return exactMatch;
+  
+  // Then try partial match
+  return models.find(m => 
+    m.name.toLowerCase().includes(normalizedInput)
+  ) || null;
 };
 
 export const getModelVoiceNames = (): string[] => {
-  return LOCAL_MODELS.flatMap(model => model.searchTerms);
+  return LOCAL_MODELS.flatMap(model => [
+    model.name.toLowerCase(),
+    ...model.name.toLowerCase().split(' '),
+    model.id.toString()
+  ]);
 };
