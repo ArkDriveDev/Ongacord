@@ -125,24 +125,29 @@ const Hologram: React.FC = () => {
     }
   }, []);
 
-  const handleVoiceCommand = useCallback(async (command: string) => {
-    try {
-      setIsResponding(true);
+ const handleVoiceCommand = useCallback(async (command: string) => {
+  try {
+    setIsResponding(true);
 
-      if (responseTimeoutRef.current) {
-        clearTimeout(responseTimeoutRef.current);
-      }
-
-      await CommandList(command);
-
-      responseTimeoutRef.current = setTimeout(() => {
-        setIsResponding(false);
-      }, 2000);
-    } catch (error) {
-      console.error("Command error:", error);
-      setIsResponding(false);
+    if (responseTimeoutRef.current) {
+      clearTimeout(responseTimeoutRef.current);
     }
-  }, []);
+
+    const result = await CommandList(command);
+    
+    if (result.action === 'changeModel' && result.model) {
+      setIsModelChanging(true);
+      setSelectedModel(result.model);
+    }
+
+    responseTimeoutRef.current = setTimeout(() => {
+      setIsResponding(false);
+    }, 2000);
+  } catch (error) {
+    console.error("Command error:", error);
+    setIsResponding(false);
+  }
+}, []);
 
   useIonViewWillEnter(() => {
     if (document.activeElement instanceof HTMLElement) {
