@@ -1,98 +1,233 @@
-import { 
-  IonContent, IonPage, IonHeader, IonToolbar, 
-  IonTitle, IonButtons, IonBackButton 
+import {
+  IonContent, IonPage, IonHeader, IonToolbar,
+  IonTitle, useIonViewWillEnter, useIonViewWillLeave, useIonViewDidEnter
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './Hologram.css';
 import Orb1 from '../images/Orb1.gif';
+import VoiceService from '../services/VoiceService';
+import CommandList from '../services/CommandList';
+import hello from '../Responses/CuteResponse/hello1.ogg';
+import reverseImage from '../images/reverse.png';
+import wanya from '../Responses/CuteResponse/Wanya.mp3';
 
-interface ModelData {
+interface HologramModel {
   id: number;
   name: string;
   src: string;
 }
 
-interface LocationState {
-  model: ModelData;
-}
-
-// Persistent selected model outside component
-let globalSelectedModel: ModelData | null = null;
-
-const DEFAULT_MODEL = {
+const DEFAULT_MODEL: HologramModel = {
   id: 1,
   name: 'Orb 1',
   src: Orb1
 };
 
 const Hologram: React.FC = () => {
-  const location = useLocation<LocationState>();
-  const [selectedModel, setSelectedModel] = useState<ModelData | null>(globalSelectedModel || DEFAULT_MODEL);
+  const location = useLocation<{ model?: HologramModel }>();
+  const [selectedModel, setSelectedModel] = useState<HologramModel>(DEFAULT_MODEL);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [isResponding, setIsResponding] = useState(false);
+  const [isReversed, setIsReversed] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const wanyaSound = new Audio(wanya);
 
-  // Update model when navigation state changes
   useEffect(() => {
-    if (location.state?.model) {
-      globalSelectedModel = location.state.model;
-      setSelectedModel(location.state.model);
-    } else if (!globalSelectedModel) {
-      // Only use default if no model was ever selected
-      globalSelectedModel = DEFAULT_MODEL;
-      setSelectedModel(DEFAULT_MODEL);
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' &&
+          mutation.attributeName === 'aria-hidden' &&
+          mutation.target instanceof HTMLElement &&
+          mutation.target.id === 'main-content') {
+          mutation.target.removeAttribute('aria-hidden');
+        }
+      });
+    });
+
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      observer.observe(mainContent, { attributes: true });
     }
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    setSelectedModel(location.state?.model || DEFAULT_MODEL);
   }, [location.state]);
 
-  const imageDistance = 100;
-  const imageSize = 150;
+  const playHelloSound = () => {
+    if (audioRef.current) {
+      VoiceService.setSystemAudioState(true);
+      setIsResponding(true);
 
-  if (!selectedModel) {
-    return (
-      <IonPage>
-        <IonHeader>
-          <IonToolbar>
-            <IonButtons slot="start">
-              <IonBackButton defaultHref="/models" text="Back" />
-            </IonButtons>
-            <IonTitle>Loading...</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent>
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <h3>Loading hologram viewer</h3>
-          </div>
-        </IonContent>
-      </IonPage>
-    );
-  }
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => console.error("Audio play error:", e));
 
-   return (
+      audioRef.current.onended = () => {
+        VoiceService.setSystemAudioState(false);
+        setIsResponding(false);
+      };
+
+      audioRef.current.onerror = () => {
+        VoiceService.setSystemAudioState(false);
+        setIsResponding(false);
+      };
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        VoiceService.setSpeakingState(false);
+      }
+    };
+  }, []);
+
+  const handleReverseClick = () => {
+    setIsReversed(!isReversed);
+    wanyaSound.play().catch(e => console.error("Failed to play audio:", e));
+  };
+
+  const handleVoiceCommand = useCallback(async (command: string) => {
+    try {
+      setIsResponding(true);
+
+      if (responseTimeoutRef.current) {
+        clearTimeout(responseTimeoutRef.current);
+      }
+
+      await CommandList(command);
+
+      responseTimeoutRef.current = setTimeout(() => {
+        setIsResponding(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Command error:", error);
+      setIsResponding(false);
+    }
+  }, []);
+
+  useIonViewWillEnter(() => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
+    audioRef.current = new Audio(hello);
+    audioRef.current.preload = 'auto';
+
+    const initialize = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+        setPermissionGranted(true);
+
+        const started = await VoiceService.startListening(handleVoiceCommand);
+        setIsVoiceActive(started);
+
+        if (started) {
+          playHelloSound();
+        }
+      } catch (error) {
+        console.error("Voice init error:", error);
+        setPermissionGranted(false);
+        setIsVoiceActive(false);
+      }
+    };
+    initialize();
+
+    if (audioRef.current) {
+      audioRef.current.onended = () => {
+        setIsResponding(false);
+      };
+      audioRef.current.onplay = () => {
+        setIsResponding(true);
+      };
+    }
+  });
+
+  useIonViewWillLeave(() => {
+    VoiceService.stopListening();
+    setIsVoiceActive(false);
+    setIsResponding(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (responseTimeoutRef.current) {
+      clearTimeout(responseTimeoutRef.current);
+    }
+  });
+
+  useIonViewDidEnter(() => {
+    const hiddenPages = document.querySelectorAll('.ion-page-hidden');
+    hiddenPages.forEach(page => {
+      page.setAttribute('inert', '');
+      page.removeAttribute('aria-hidden');
+    });
+  });
+
+  return (
     <IonPage style={{ backgroundColor: 'black' }}>
       <IonHeader>
         <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/models" text="Back" />
-          </IonButtons>
           <IonTitle>{selectedModel.name}</IonTitle>
+          <div slot="end" style={{
+            color: isVoiceActive ? '#4CAF50' : '#ccc',
+            padding: '0 16px',
+            fontSize: '0.8rem'
+          }}>
+            {isVoiceActive ? 'Active' : 'Off'}
+          </div>
         </IonToolbar>
       </IonHeader>
 
       <IonContent fullscreen className="hologram-container">
-        <div className="hologram-center">
-          <div className="reflection-base">
-            <div className="reflection-image top">
-              <img src={selectedModel.src} alt="Top" />
-            </div>
-            <div className="reflection-image right">
-              <img src={selectedModel.src} alt="Right" />
-            </div>
-            <div className="reflection-image bottom">
-              <img src={selectedModel.src} alt="Bottom" />
-            </div>
-            <div className="reflection-image left">
-              <img src={selectedModel.src} alt="Left" />
-            </div>
+        <div className={`hologram-center ${isResponding ? 'pulse-effect' : ''}`}>
+          <img
+            src={reverseImage}
+            alt="Reverse Hologram"
+            className="center-image"
+            onClick={handleReverseClick}
+            onError={(e) => console.error("Failed to load center image")}
+          />
+          <div className={`reflection-base ${isReversed ? 'reversed' : ''}`}>
+            {['top', 'right', 'bottom', 'left'].map((position) => (
+              <div
+                key={position}
+                className={`reflection-image ${position}`}
+              >
+                <img
+                  src={selectedModel.src}
+                  alt={`${position} Reflection`}
+                  onError={(e) => (e.currentTarget.src = DEFAULT_MODEL.src)}
+                />
+              </div>
+            ))}
           </div>
         </div>
+
+        {!permissionGranted && (
+          <div style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: '20px',
+            zIndex: 1000,
+            textAlign: 'center'
+          }}>
+            Microphone access required for voice commands
+          </div>
+        )}
       </IonContent>
     </IonPage>
   );

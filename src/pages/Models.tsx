@@ -1,10 +1,10 @@
-import { 
+import {
   IonContent, IonHeader, IonPage, IonTitle, IonToolbar,
   IonGrid, IonRow, IonCol, IonCard, IonCardContent, IonImg,
   IonButton
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ModelSearch from '../components/ModelsProps/ModelSearch';
 
 // Import all images directly
@@ -16,6 +16,10 @@ import JellyFish1 from '../images/JellyFish1.gif';
 import JellyFish2 from '../images/JellyFish2.gif';
 import JellyFish3 from '../images/JellyFish3.gif';
 import JellyFish4 from '../images/JellyFish4.gif';
+import AlladV from '../images/Allad V.gif';
+import Octavia from '../images/Octavia_Agile_Unarmed.gif';
+import Drifter from '../images/Drifter.gif';
+import Citrine from '../images/Citrine_Agile_Unarmed.gif';
 
 interface ImageData {
   id: number;
@@ -32,13 +36,41 @@ const APP_IMAGES: ImageData[] = [
   { id: 6, name: 'Jelly Fish 2', src: JellyFish2 },
   { id: 7, name: 'Jelly Fish 3', src: JellyFish3 },
   { id: 8, name: 'Jelly Fish 4', src: JellyFish4 },
+  { id: 9, name: 'Allad V', src: AlladV },
+  { id: 10, name: 'Octavia', src: Octavia },
+  { id: 11, name: 'Drifter', src: Drifter },
+  { id: 12, name: 'Citrine', src: Citrine },
 ];
 
 const Models: React.FC = () => {
   const history = useHistory();
   const [searchQuery, setSearchQuery] = useState('');
 
+  useEffect(() => {
+     const observer = new MutationObserver((mutations) => {
+       mutations.forEach((mutation) => {
+         if (mutation.type === 'attributes' &&
+           mutation.attributeName === 'aria-hidden' &&
+           mutation.target instanceof HTMLElement &&
+           mutation.target.id === 'main-content') {
+           mutation.target.removeAttribute('aria-hidden');
+         }
+       });
+     });
+ 
+     const mainContent = document.getElementById('main-content');
+     if (mainContent) {
+       observer.observe(mainContent, { attributes: true });
+     }
+ 
+     return () => observer.disconnect();
+   }, []);
+
   const handleModelClick = (model: ImageData) => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     history.push({
       pathname: '/hologram',
       state: { model }
@@ -56,10 +88,10 @@ const Models: React.FC = () => {
           <IonTitle>3D Models</IonTitle>
         </IonToolbar>
       </IonHeader>
-      
+
       <IonContent>
         <ModelSearch onSearch={setSearchQuery} />
-        
+
         <IonGrid style={{ paddingTop: '20px' }}>
           {filteredImages.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -70,27 +102,27 @@ const Models: React.FC = () => {
               <IonRow key={rowIndex}>
                 {filteredImages.slice(rowIndex * 4, rowIndex * 4 + 4).map((image) => (
                   <IonCol size="6" size-md="3" key={image.id}>
-                    <IonCard 
-                      button 
+                    <IonCard
+                      button
                       onClick={() => handleModelClick(image)}
-                      style={{ 
+                      style={{
                         height: '100%',
                         margin: '8px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                       }}
                     >
                       <IonCardContent style={{ textAlign: 'center' }}>
-                        <IonImg 
-                          src={image.src} 
+                        <IonImg
+                          src={image.src}
                           alt={image.name}
-                          style={{ 
-                            width: '100%', 
-                            height: '150px', 
+                          style={{
+                            width: '100%',
+                            height: '150px',
                             objectFit: 'contain',
                             padding: '10px'
                           }}
                         />
-                        <h3 style={{ 
+                        <h3 style={{
                           margin: '10px 0 5px',
                           fontSize: '1rem',
                           color: '#333'
