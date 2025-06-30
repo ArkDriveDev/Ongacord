@@ -1,3 +1,4 @@
+// src/services/CommandList.ts
 import hai from '../Responses/CuteResponse/hai.ogg';
 import womp from '../Responses/CuteResponse/womp.ogg';
 import hi from '../Responses/CuteResponse/Hi.mp3';
@@ -8,13 +9,19 @@ import VoiceService from './VoiceService';
 // Audio cache
 const audioCache: Record<string, HTMLAudioElement> = {};
 
-// Preload audio
-['hai', hai, 'womp', womp, 'hi', hi, 'womp2x', womp2x].forEach(([key, url]) => {
+// Preload all audio files
+const preloadAudio = (sound: string, url: string) => {
   const audio = new Audio(url);
   audio.volume = 0.8;
   audio.preload = 'auto';
-  audioCache[key] = audio;
-});
+  audioCache[sound] = audio;
+};
+
+// Initialize audio cache
+preloadAudio('hai', hai);
+preloadAudio('womp', womp);
+preloadAudio('hi', hi);
+preloadAudio('womp2x', womp2x);
 
 const playAudio = async (sound: string): Promise<void> => {
   try {
@@ -36,7 +43,7 @@ export const initiateModelChange = async (): Promise<string | null> => {
   await playAudio('hi');
   return new Promise((resolve) => {
     VoiceService.startModelSelection(6000, (modelName) => {
-      resolve(modelName?.trim() || null);
+      resolve(modelName || null);
     });
   });
 };
@@ -45,16 +52,7 @@ export const CommandList = async (command: string): Promise<{
   action: 'changeModel' | 'hello' | 'unknown' | 'timeout' | 'invalidModel';
   model?: ImageData;
 }> => {
-  // Normalize command
-  const normalized = command.toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b(one)\b/g, '1')
-    .replace(/\b(two)\b/g, '2')
-    .replace(/\b(three)\b/g, '3')
-    .replace(/\b(four)\b/g, '4');
-
-  console.log('Processing command:', normalized);
+  const normalized = command.trim().toLowerCase();
 
   // 1. Handle model change command
   if (normalized.includes("change")) {
@@ -67,7 +65,6 @@ export const CommandList = async (command: string): Promise<{
 
     const model = await findModelByName(modelName);
     if (model) {
-      console.log('Model changed to:', model.name);
       return { action: 'changeModel', model };
     }
 
