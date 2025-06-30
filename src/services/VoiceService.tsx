@@ -1,4 +1,4 @@
-// VoiceService.ts - Final Fixed Version
+// src/services/VoiceService.ts
 declare global {
   interface Window {
     webkitSpeechRecognition: typeof SpeechRecognition;
@@ -20,6 +20,11 @@ class VoiceService {
   private restartAttempts = 0;
   private readonly MAX_RESTART_ATTEMPTS = 3;
   private isRestarting = false;
+
+  // New model selection state
+  private isExpectingModel = false;
+  private modelChangeCallback: ((modelName: string) => void) | null = null;
+  private modelTimeout: number | null = null;
 
   constructor() {
     this.initRecognition();
@@ -60,12 +65,17 @@ class VoiceService {
       if (results.isFinal) {
         const transcript = results[0].transcript.trim().toLowerCase();
         console.log("Voice command detected:", transcript);
-        this.onResultCallback?.(transcript);
+        
+        if (this.isExpectingModel) {
+          this.modelChangeCallback?.(transcript);
+          this.cancelModelSelection();
+        } else {
+          this.onResultCallback?.(transcript);
+        }
       }
     };
 
     this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      // Ignore these common non-critical errors
       const ignorableErrors = ['no-speech', 'audio-capture'];
       if (!ignorableErrors.includes(event.error)) {
         console.error("Recognition error:", event.error);
@@ -121,7 +131,6 @@ class VoiceService {
         return;
       }
 
-      // Ensure clean stop before restart
       if (currentState !== 'inactive') {
         this.recognition.stop();
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -148,6 +157,30 @@ class VoiceService {
     }
   }
 
+  // MODEL SELECTION METHODS
+  public startModelSelection(timeoutMs: number, callback: (modelName: string) => void): void {
+    this.isExpectingModel = true;
+    this.modelChangeCallback = callback;
+    this.modelTimeout = window.setTimeout(() => {
+      this.cancelModelSelection();
+      callback(''); // Empty string indicates timeout
+    }, timeoutMs);
+  }
+
+  public cancelModelSelection(): void {
+    if (this.modelTimeout) {
+      clearTimeout(this.modelTimeout);
+      this.modelTimeout = null;
+    }
+    this.isExpectingModel = false;
+    this.modelChangeCallback = null;
+  }
+
+  public isExpectingModelSelection(): boolean {
+    return this.isExpectingModel;
+  }
+
+  // EXISTING VOICE SERVICE METHODS
   public async startListening(onResult: (command: string) => void): Promise<boolean> {
     if (!this.recognition) return false;
 
@@ -168,6 +201,7 @@ class VoiceService {
     this.isListening = false;
     this.onResultCallback = null;
     this.restartAttempts = 0;
+    this.cancelModelSelection();
     
     if (this.cooldownTimeout) {
       clearTimeout(this.cooldownTimeout);
@@ -208,6 +242,9 @@ class VoiceService {
           console.warn("Error stopping recognition:", error);
         }
       }
+      if (this.isExpectingModel) {
+        this.cancelModelSelection();
+      }
     } else if (this.isListening) {
       if (this.cooldownTimeout) {
         clearTimeout(this.cooldownTimeout);
@@ -225,7 +262,8 @@ class VoiceService {
       isListening: this.isListening,
       isSpeaking: this.isSpeaking,
       systemAudioPlaying: this.systemAudioPlaying,
-      recognitionActive: this.getRecognitionState()
+      recognitionActive: this.getRecognitionState(),
+      expectingModel: this.isExpectingModel
     };
   }
 }
