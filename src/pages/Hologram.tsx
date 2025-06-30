@@ -11,6 +11,7 @@ import CommandList from '../services/CommandList';
 import hello from '../Responses/CuteResponse/hello1.ogg';
 import reverseImage from '../images/reverse.png';
 import wanya from '../Responses/CuteResponse/Wanya.mp3';
+import { fetchAvailableModels } from '../services/ModelsService';
 
 interface HologramModel {
   id: number;
@@ -96,6 +97,34 @@ const Hologram: React.FC = () => {
     wanyaSound.play().catch(e => console.error("Failed to play audio:", e));
   };
 
+  const handleModelChange = useCallback(async (modelName: string | null) => {
+    if (!modelName) {
+      setIsModelChanging(false);
+      return;
+    }
+
+    try {
+      const models = await fetchAvailableModels();
+      const normalizedInput = modelName.toLowerCase().trim();
+
+      // Find matching model
+      const model = models.find(m =>
+        m.name.toLowerCase() === normalizedInput ||
+        m.name.toLowerCase().includes(normalizedInput)
+      );
+
+      if (model) {
+        setSelectedModel(model);
+        // Optional: Play success sound
+      }
+    } catch (error) {
+      console.error("Model change error:", error);
+      // Optional: Play error sound
+    } finally {
+      setIsModelChanging(false);
+    }
+  }, []);
+
   const handleVoiceCommand = useCallback(async (command: string) => {
     try {
       setIsResponding(true);
@@ -163,6 +192,9 @@ const Hologram: React.FC = () => {
     }
     if (responseTimeoutRef.current) {
       clearTimeout(responseTimeoutRef.current);
+    }
+    if (modelChangeTimeout) {
+      clearTimeout(modelChangeTimeout);
     }
   });
 
