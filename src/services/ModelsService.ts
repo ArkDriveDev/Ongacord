@@ -1,5 +1,5 @@
 // src/services/ModelsService.ts
-interface ImageData {
+export interface ImageData { 
   id: number;
   name: string;
   src: string;

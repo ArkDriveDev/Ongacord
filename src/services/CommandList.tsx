@@ -1,10 +1,15 @@
+// src/services/CommandList.ts
 import hai from '../Responses/CuteResponse/hai.ogg';
 import womp from '../Responses/CuteResponse/womp.ogg';
-import VoiceService from './VoiceService';
 import hi from '../Responses/CuteResponse/Hi.mp3';
+import womp2x from '../Responses/CuteResponse/womp2x.ogg';
+import { findModelByName, ImageData } from './ModelsService';
+import VoiceService from './VoiceService';
 
+// Audio cache
 const audioCache: Record<string, HTMLAudioElement> = {};
 
+// Preload all audio files
 const preloadAudio = (sound: string, url: string) => {
   const audio = new Audio(url);
   audio.volume = 0.8;
@@ -12,50 +17,70 @@ const preloadAudio = (sound: string, url: string) => {
   audioCache[sound] = audio;
 };
 
-// Preload sounds
+// Initialize audio cache
 preloadAudio('hai', hai);
 preloadAudio('womp', womp);
 preloadAudio('hi', hi);
+preloadAudio('womp2x', womp2x);
 
-const CommandList = async (command: string) => {
-  const processed = command.trim().toLowerCase();
-  
-  // Determine which sound to play based on the command
-  let sound;
-  if (processed.includes("hello")) {
-    sound = 'hai';
-  } else if (processed.includes("change")) {
-    sound = 'hi';
-  } else {
-    sound = 'womp';
-  }
-
+const playAudio = async (sound: string): Promise<void> => {
   try {
     VoiceService.setSystemAudioState(true);
-    
-    const audio = audioCache[sound] || new Audio(
-      sound === 'hai' ? hai : 
-      sound === 'hi' ? hi : 
-      womp
-    );
-    audio.currentTime = 0;
-    
+    const audio = audioCache[sound].cloneNode(true) as HTMLAudioElement;
+    await audio.play();
     await new Promise<void>((resolve) => {
-      audio.play();
-      audio.onended = () => {
-        VoiceService.setSystemAudioState(false);
-        resolve();
-      };
-      audio.onerror = () => {
-        VoiceService.setSystemAudioState(false);
-        resolve();
-      };
+      audio.onended = () => resolve();
+      audio.onerror = () => resolve();
     });
-
-  } catch (error) {
+  } catch (err) {
+    console.error("Audio playback error:", err);
+  } finally {
     VoiceService.setSystemAudioState(false);
-    console.error("Audio error:", error);
   }
+};
+
+export const initiateModelChange = async (): Promise<string | null> => {
+  await playAudio('hi');
+  return new Promise((resolve) => {
+    VoiceService.startModelSelection(6000, (modelName) => {
+      resolve(modelName || null);
+    });
+  });
+};
+
+export const CommandList = async (command: string): Promise<{
+  action: 'changeModel' | 'hello' | 'unknown' | 'timeout' | 'invalidModel';
+  model?: ImageData;
+}> => {
+  const normalized = command.trim().toLowerCase();
+
+  // 1. Handle model change command
+  if (normalized.includes("change")) {
+    const modelName = await initiateModelChange();
+    
+    if (!modelName) {
+      await playAudio('womp2x');
+      return { action: 'timeout' };
+    }
+
+    const model = await findModelByName(modelName);
+    if (model) {
+      return { action: 'changeModel', model };
+    }
+
+    await playAudio('womp2x');
+    return { action: 'invalidModel' };
+  }
+
+  // 2. Handle hello command
+  if (normalized.includes("hello")) {
+    await playAudio('hai');
+    return { action: 'hello' };
+  }
+
+  // 3. Default unknown command
+  await playAudio('womp');
+  return { action: 'unknown' };
 };
 
 export default CommandList;
