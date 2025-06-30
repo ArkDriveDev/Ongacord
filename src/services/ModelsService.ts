@@ -16,14 +16,14 @@ import JellyFish3 from '../images/JellyFish3.gif';
 import JellyFish4 from '../images/JellyFish4.gif';
 
 const LOCAL_MODELS: ImageData[] = [
-  { id: 1, name: 'Orb 1', src: Orb1 },
-  { id: 2, name: 'Orb 2', src: Orb2 },
-  { id: 3, name: 'Orb 3', src: Orb3 },
-  { id: 4, name: 'Orb 4', src: Orb4 },
-  { id: 5, name: 'Jelly Fish 1', src: JellyFish1 },
-  { id: 6, name: 'Jelly Fish 2', src: JellyFish2 },
-  { id: 7, name: 'Jelly Fish 3', src: JellyFish3 },
-  { id: 8, name: 'Jelly Fish 4', src: JellyFish4 },
+  { id: 1, name: 'Orb one', src: Orb1 },
+  { id: 2, name: 'Orb two', src: Orb2 },
+  { id: 3, name: 'Orb three', src: Orb3 },
+  { id: 4, name: 'Orb four', src: Orb4 },
+  { id: 5, name: 'Jelly Fish one', src: JellyFish1 },
+  { id: 6, name: 'Jelly Fish two', src: JellyFish2 },
+  { id: 7, name: 'Jelly Fish three', src: JellyFish3 },
+  { id: 8, name: 'Jelly Fish four', src: JellyFish4 },
 ];
 
 // Rest of your existing code remains the same...
