@@ -2,7 +2,7 @@
 import hai from '../Responses/CuteResponse/hai.ogg';
 import womp from '../Responses/CuteResponse/womp.ogg';
 import hi from '../Responses/CuteResponse/Hi.mp3';
-import womp2x from '../Responses/CuteResponse/womp2x.ogg';
+import womp2x from '../Responses/CuteResponse/womp.ogg';
 import { findModelByName, ImageData } from './ModelsService';
 import VoiceService from './VoiceService';
 
