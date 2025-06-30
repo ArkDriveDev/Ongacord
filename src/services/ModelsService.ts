@@ -5,17 +5,28 @@ export interface ImageData {
   src: string;
 }
 
+// Import images directly
+import Orb1 from '../images/Orb1.gif';
+import Orb2 from '../images/Orb2.gif';
+import Orb3 from '../images/Orb3.gif';
+import Orb4 from '../images/Orb4.gif';
+import JellyFish1 from '../images/JellyFish1.gif';
+import JellyFish2 from '../images/JellyFish2.gif';
+import JellyFish3 from '../images/JellyFish3.gif';
+import JellyFish4 from '../images/JellyFish4.gif';
+
 const LOCAL_MODELS: ImageData[] = [
-  { id: 1, name: 'Orb 1', src: require('../images/Orb1.gif') },
-  { id: 2, name: 'Orb 2', src: require('../images/Orb2.gif') },
-  { id: 3, name: 'Orb 3', src: require('../images/Orb3.gif') },
-  { id: 4, name: 'Orb 4', src: require('../images/Orb4.gif') },
-  { id: 5, name: 'Jelly Fish 1', src: require('../images/JellyFish1.gif') },
-  { id: 6, name: 'Jelly Fish 2', src: require('../images/JellyFish2.gif') },
-  { id: 7, name: 'Jelly Fish 3', src: require('../images/JellyFish3.gif') },
-  { id: 8, name: 'Jelly Fish 4', src: require('../images/JellyFish4.gif') },
+  { id: 1, name: 'Orb 1', src: Orb1 },
+  { id: 2, name: 'Orb 2', src: Orb2 },
+  { id: 3, name: 'Orb 3', src: Orb3 },
+  { id: 4, name: 'Orb 4', src: Orb4 },
+  { id: 5, name: 'Jelly Fish 1', src: JellyFish1 },
+  { id: 6, name: 'Jelly Fish 2', src: JellyFish2 },
+  { id: 7, name: 'Jelly Fish 3', src: JellyFish3 },
+  { id: 8, name: 'Jelly Fish 4', src: JellyFish4 },
 ];
 
+// Rest of your existing code remains the same...
 export const fetchAvailableModels = async (): Promise<ImageData[]> => {
   return Promise.resolve(LOCAL_MODELS);
 };
