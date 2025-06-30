@@ -1,7 +1,6 @@
 import {
   IonContent, IonPage, IonHeader, IonToolbar,
-  IonTitle, IonButtons, IonBackButton,
-  useIonViewWillEnter, useIonViewWillLeave, useIonViewDidEnter
+  IonTitle, useIonViewWillEnter, useIonViewWillLeave, useIonViewDidEnter
 } from '@ionic/react';
 import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -11,6 +10,7 @@ import VoiceService from '../services/VoiceService';
 import CommandList from '../services/CommandList';
 import hello from '../Responses/CuteResponse/hello1.ogg';
 import reverseImage from '../images/reverse.png';
+import wanya from '../Responses/CuteResponse/Wanya.mp3';
 
 interface HologramModel {
   id: number;
@@ -33,6 +33,7 @@ const Hologram: React.FC = () => {
   const [isReversed, setIsReversed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const wanyaSound = new Audio(wanya);
 
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
@@ -90,6 +91,7 @@ const Hologram: React.FC = () => {
 
   const handleReverseClick = () => {
     setIsReversed(!isReversed);
+    wanyaSound.play().catch(e => console.error("Failed to play audio:", e));
   };
 
   const handleVoiceCommand = useCallback(async (command: string) => {
