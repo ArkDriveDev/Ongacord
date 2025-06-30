@@ -1,6 +1,7 @@
 import hai from '../Responses/CuteResponse/hai.ogg';
 import womp from '../Responses/CuteResponse/womp.ogg';
 import VoiceService from './VoiceService';
+import hi from '../Responses/CuteResponse/Hi.mp3';
 
 const audioCache: Record<string, HTMLAudioElement> = {};
 
@@ -14,15 +15,29 @@ const preloadAudio = (sound: string, url: string) => {
 // Preload sounds
 preloadAudio('hai', hai);
 preloadAudio('womp', womp);
+preloadAudio('hi', hi);
 
-const CommandList = async (command: string) => {  // Removed navigation parameter
+const CommandList = async (command: string) => {
   const processed = command.trim().toLowerCase();
-  const sound = processed.includes("hello") ? 'hai' : 'womp';
+  
+  // Determine which sound to play based on the command
+  let sound;
+  if (processed.includes("hello")) {
+    sound = 'hai';
+  } else if (processed.includes("change")) {
+    sound = 'hi';
+  } else {
+    sound = 'womp';
+  }
 
   try {
     VoiceService.setSystemAudioState(true);
     
-    const audio = audioCache[sound] || new Audio(sound === 'hai' ? hai : womp);
+    const audio = audioCache[sound] || new Audio(
+      sound === 'hai' ? hai : 
+      sound === 'hi' ? hi : 
+      womp
+    );
     audio.currentTime = 0;
     
     await new Promise<void>((resolve) => {
