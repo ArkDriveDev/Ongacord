@@ -39,43 +39,37 @@ const playAudio = async (sound: string): Promise<void> => {
   }
 };
 
-export const initiateModelChange = async (): Promise<{
-  modelName: string | null;
-  onListeningStart: () => void;  // Callback when ready to listen
-}> => {
-  // Play Hi.mp3 and wait for it to finish
+export const initiateModelChange = async (): Promise<string | null> => {
   await playAudio('hi');
-
-  return {
-    modelName: await new Promise<string | null>((resolve) => {
-      VoiceService.startModelSelection(6000, resolve);
-    }),
-    onListeningStart: () => { }  // No-op, just for type safety
-  };
+  return new Promise((resolve) => {
+    VoiceService.startModelSelection(6000, (modelName) => {
+      resolve(modelName || null);
+    });
+  });
 };
 
 export const CommandList = async (command: string): Promise<{
   action: 'changeModel' | 'hello' | 'unknown' | 'timeout' | 'invalidModel';
   model?: ImageData;
-  onListeningStart?: () => void;  // Callback trigger
 }> => {
   const normalized = command.trim().toLowerCase();
 
+  // 1. Handle model change command
   if (normalized.includes("change")) {
-    const { modelName, onListeningStart } = await initiateModelChange();
-
-    // Signal that Hi.mp3 is done and we're listening
-    if (onListeningStart) onListeningStart();
-
+    const modelName = await initiateModelChange();
+    
     if (!modelName) {
       await playAudio('pikmin');
       return { action: 'timeout' };
     }
 
     const model = await findModelByName(modelName);
-    return model
-      ? { action: 'changeModel', model }
-      : { action: 'invalidModel' };
+    if (model) {
+      return { action: 'changeModel', model };
+    }
+
+    await playAudio('pikmin');
+    return { action: 'invalidModel' };
   }
 
   // 2. Handle hello command

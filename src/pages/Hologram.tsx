@@ -37,14 +37,13 @@ const Hologram: React.FC = () => {
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isModelChanging, setIsModelChanging] = useState(false);
   const [modelChangeTimeout, setModelChangeTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [isListeningForModel, setIsListeningForModel] = useState(false);
 
   const wanyaSound = useRef(new Audio()).current;
   useEffect(() => {
     wanyaSound.src = wanya;
     wanyaSound.load();
   }, []);
-
+  
   const successSound = useRef(new Audio()).current;
   useEffect(() => {
     successSound.src = success;
@@ -113,15 +112,14 @@ const Hologram: React.FC = () => {
   const handleModelChange = useCallback(async (modelName: string | null) => {
     if (!modelName) {
       setIsModelChanging(false);
-      setIsListeningForModel(false); // Add this
       return;
     }
 
     try {
-      setIsListeningForModel(true); // Add this - will trigger green blink
       const models = await fetchAvailableModels();
       const normalizedInput = modelName.toLowerCase().trim();
 
+      // Find matching model
       const model = models.find(m =>
         m.name.toLowerCase() === normalizedInput ||
         m.name.toLowerCase().includes(normalizedInput)
@@ -132,35 +130,36 @@ const Hologram: React.FC = () => {
       }
     } catch (error) {
       console.error("Model change error:", error);
+      // Optional: Play error sound
     } finally {
       setIsModelChanging(false);
-      setIsListeningForModel(false);
     }
   }, []);
 
   const handleVoiceCommand = useCallback(async (command: string) => {
-  try {
-    setIsResponding(true);
-    const result = await CommandList(command);
+    try {
+      setIsResponding(true);
 
-    if (result.listeningPhase) {
-      setIsResponding(false); // Stop cyan
-      setIsListeningForModel(true); // Start green
-      await result.listeningPhase(); // Maintains green during listening
-      setIsListeningForModel(false);
-    }
+      if (responseTimeoutRef.current) {
+        clearTimeout(responseTimeoutRef.current);
+      }
 
-    if (result.action === 'changeModel' && result.model) {
-      setSelectedModel(result.model);
-      await successSound.play();
+      const result = await CommandList(command);
+
+      if (result.action === 'changeModel' && result.model) {
+        setIsModelChanging(true);
+        setSelectedModel(result.model);
+        successSound.play().catch(e => console.error("Failed to play audio:", e));
+      }
+
+      responseTimeoutRef.current = setTimeout(() => {
+        setIsResponding(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Command error:", error);
+      setIsResponding(false);
     }
-  } catch (error) {
-    // ... error handling
-  } finally {
-    setIsResponding(false);
-    setIsListeningForModel(false);
-  }
-}, []);
+  }, []);
 
   useIonViewWillEnter(() => {
     if (document.activeElement instanceof HTMLElement) {
@@ -240,7 +239,7 @@ const Hologram: React.FC = () => {
       </IonHeader>
 
       <IonContent fullscreen className="hologram-container">
-        <div className={`hologram-center ${isListeningForModel ? 'listen-effect' : isResponding ? 'pulse-effect' : ''}`}>
+        <div className={`hologram-center ${isResponding ? 'pulse-effect' : ''}`}>
           <img
             src={reverseImage}
             alt="Reverse Hologram"
