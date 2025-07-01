@@ -34,10 +34,14 @@ const Hologram: React.FC = () => {
   const [isReversed, setIsReversed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const wanyaSound = new Audio(wanya);
   const [isModelChanging, setIsModelChanging] = useState(false);
   const [modelChangeTimeout, setModelChangeTimeout] = useState<NodeJS.Timeout | null>(null);
 
+  const wanyaSound = useRef(new Audio()).current;
+  useEffect(() => {
+    wanyaSound.src = wanya;
+    wanyaSound.load();
+  }, []);
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
@@ -125,29 +129,29 @@ const Hologram: React.FC = () => {
     }
   }, []);
 
- const handleVoiceCommand = useCallback(async (command: string) => {
-  try {
-    setIsResponding(true);
+  const handleVoiceCommand = useCallback(async (command: string) => {
+    try {
+      setIsResponding(true);
 
-    if (responseTimeoutRef.current) {
-      clearTimeout(responseTimeoutRef.current);
-    }
+      if (responseTimeoutRef.current) {
+        clearTimeout(responseTimeoutRef.current);
+      }
 
-    const result = await CommandList(command);
-    
-    if (result.action === 'changeModel' && result.model) {
-      setIsModelChanging(true);
-      setSelectedModel(result.model);
-    }
+      const result = await CommandList(command);
 
-    responseTimeoutRef.current = setTimeout(() => {
+      if (result.action === 'changeModel' && result.model) {
+        setIsModelChanging(true);
+        setSelectedModel(result.model);
+      }
+
+      responseTimeoutRef.current = setTimeout(() => {
+        setIsResponding(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Command error:", error);
       setIsResponding(false);
-    }, 2000);
-  } catch (error) {
-    console.error("Command error:", error);
-    setIsResponding(false);
-  }
-}, []);
+    }
+  }, []);
 
   useIonViewWillEnter(() => {
     if (document.activeElement instanceof HTMLElement) {
