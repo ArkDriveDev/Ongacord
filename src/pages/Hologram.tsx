@@ -44,7 +44,7 @@ const Hologram: React.FC = () => {
     wanyaSound.src = wanya;
     wanyaSound.load();
   }, []);
-  
+
   const successSound = useRef(new Audio()).current;
   useEffect(() => {
     successSound.src = success;
@@ -113,14 +113,15 @@ const Hologram: React.FC = () => {
   const handleModelChange = useCallback(async (modelName: string | null) => {
     if (!modelName) {
       setIsModelChanging(false);
+      setIsListeningForModel(false); // Add this
       return;
     }
 
     try {
+      setIsListeningForModel(true); // Add this - will trigger green blink
       const models = await fetchAvailableModels();
       const normalizedInput = modelName.toLowerCase().trim();
 
-      // Find matching model
       const model = models.find(m =>
         m.name.toLowerCase() === normalizedInput ||
         m.name.toLowerCase().includes(normalizedInput)
@@ -131,9 +132,9 @@ const Hologram: React.FC = () => {
       }
     } catch (error) {
       console.error("Model change error:", error);
-      // Optional: Play error sound
     } finally {
       setIsModelChanging(false);
+      setIsListeningForModel(false);
     }
   }, []);
 
