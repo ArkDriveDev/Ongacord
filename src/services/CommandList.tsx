@@ -41,6 +41,7 @@ const playAudio = async (sound: string): Promise<void> => {
 
 export const initiateModelChange = async (): Promise<string | null> => {
   await playAudio('hi');
+  // The green blink will be handled by the Hologram component's state
   return new Promise((resolve) => {
     VoiceService.startModelSelection(6000, (modelName) => {
       resolve(modelName || null);
