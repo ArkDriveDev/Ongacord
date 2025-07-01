@@ -37,6 +37,7 @@ const Hologram: React.FC = () => {
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isModelChanging, setIsModelChanging] = useState(false);
   const [modelChangeTimeout, setModelChangeTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isListeningForModel, setIsListeningForModel] = useState(false);
 
   const wanyaSound = useRef(new Audio()).current;
   useEffect(() => {
