@@ -11,6 +11,7 @@ import CommandList from '../services/CommandList';
 import hello from '../Responses/CuteResponse/hello1.ogg';
 import reverseImage from '../images/reverse.png';
 import wanya from '../Responses/CuteResponse/Wanya.mp3';
+import success from '../Responses/CuteResponse/Success.mp3';
 import { fetchAvailableModels } from '../services/ModelsService';
 
 interface HologramModel {
@@ -42,6 +43,13 @@ const Hologram: React.FC = () => {
     wanyaSound.src = wanya;
     wanyaSound.load();
   }, []);
+  
+  const successSound = useRef(new Audio()).current;
+  useEffect(() => {
+    successSound.src = success;
+    successSound.load();
+  }, []);
+
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
@@ -119,7 +127,6 @@ const Hologram: React.FC = () => {
 
       if (model) {
         setSelectedModel(model);
-        // Optional: Play success sound
       }
     } catch (error) {
       console.error("Model change error:", error);
@@ -142,6 +149,7 @@ const Hologram: React.FC = () => {
       if (result.action === 'changeModel' && result.model) {
         setIsModelChanging(true);
         setSelectedModel(result.model);
+        successSound.play().catch(e => console.error("Failed to play audio:", e));
       }
 
       responseTimeoutRef.current = setTimeout(() => {
