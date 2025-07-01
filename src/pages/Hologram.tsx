@@ -11,6 +11,8 @@ import CommandList from '../services/CommandList';
 import hello from '../Responses/CuteResponse/hello1.ogg';
 import reverseImage from '../images/reverse.png';
 import wanya from '../Responses/CuteResponse/Wanya.mp3';
+import success from '../Responses/CuteResponse/Success.mp3';
+import { fetchAvailableModels } from '../services/ModelsService';
 
 interface HologramModel {
   id: number;
@@ -33,7 +35,20 @@ const Hologram: React.FC = () => {
   const [isReversed, setIsReversed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const wanyaSound = new Audio(wanya);
+  const [isModelChanging, setIsModelChanging] = useState(false);
+  const [modelChangeTimeout, setModelChangeTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const wanyaSound = useRef(new Audio()).current;
+  useEffect(() => {
+    wanyaSound.src = wanya;
+    wanyaSound.load();
+  }, []);
+  
+  const successSound = useRef(new Audio()).current;
+  useEffect(() => {
+    successSound.src = success;
+    successSound.load();
+  }, []);
 
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
@@ -94,6 +109,33 @@ const Hologram: React.FC = () => {
     wanyaSound.play().catch(e => console.error("Failed to play audio:", e));
   };
 
+  const handleModelChange = useCallback(async (modelName: string | null) => {
+    if (!modelName) {
+      setIsModelChanging(false);
+      return;
+    }
+
+    try {
+      const models = await fetchAvailableModels();
+      const normalizedInput = modelName.toLowerCase().trim();
+
+      // Find matching model
+      const model = models.find(m =>
+        m.name.toLowerCase() === normalizedInput ||
+        m.name.toLowerCase().includes(normalizedInput)
+      );
+
+      if (model) {
+        setSelectedModel(model);
+      }
+    } catch (error) {
+      console.error("Model change error:", error);
+      // Optional: Play error sound
+    } finally {
+      setIsModelChanging(false);
+    }
+  }, []);
+
   const handleVoiceCommand = useCallback(async (command: string) => {
     try {
       setIsResponding(true);
@@ -102,7 +144,13 @@ const Hologram: React.FC = () => {
         clearTimeout(responseTimeoutRef.current);
       }
 
-      await CommandList(command);
+      const result = await CommandList(command);
+
+      if (result.action === 'changeModel' && result.model) {
+        setIsModelChanging(true);
+        setSelectedModel(result.model);
+        successSound.play().catch(e => console.error("Failed to play audio:", e));
+      }
 
       responseTimeoutRef.current = setTimeout(() => {
         setIsResponding(false);
@@ -161,6 +209,9 @@ const Hologram: React.FC = () => {
     }
     if (responseTimeoutRef.current) {
       clearTimeout(responseTimeoutRef.current);
+    }
+    if (modelChangeTimeout) {
+      clearTimeout(modelChangeTimeout);
     }
   });
 
