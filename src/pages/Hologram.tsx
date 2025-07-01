@@ -139,29 +139,28 @@ const Hologram: React.FC = () => {
   }, []);
 
   const handleVoiceCommand = useCallback(async (command: string) => {
-    try {
-      setIsResponding(true);
+  try {
+    setIsResponding(true);
+    const result = await CommandList(command);
 
-      if (responseTimeoutRef.current) {
-        clearTimeout(responseTimeoutRef.current);
-      }
-
-      const result = await CommandList(command);
-
-      if (result.action === 'changeModel' && result.model) {
-        setIsModelChanging(true);
-        setSelectedModel(result.model);
-        successSound.play().catch(e => console.error("Failed to play audio:", e));
-      }
-
-      responseTimeoutRef.current = setTimeout(() => {
-        setIsResponding(false);
-      }, 2000);
-    } catch (error) {
-      console.error("Command error:", error);
-      setIsResponding(false);
+    if (result.listeningPhase) {
+      setIsResponding(false); // Stop cyan
+      setIsListeningForModel(true); // Start green
+      await result.listeningPhase(); // Maintains green during listening
+      setIsListeningForModel(false);
     }
-  }, []);
+
+    if (result.action === 'changeModel' && result.model) {
+      setSelectedModel(result.model);
+      await successSound.play();
+    }
+  } catch (error) {
+    // ... error handling
+  } finally {
+    setIsResponding(false);
+    setIsListeningForModel(false);
+  }
+}, []);
 
   useIonViewWillEnter(() => {
     if (document.activeElement instanceof HTMLElement) {
@@ -241,7 +240,7 @@ const Hologram: React.FC = () => {
       </IonHeader>
 
       <IonContent fullscreen className="hologram-container">
-        <div className={`hologram-center ${isResponding ? 'pulse-effect' : ''} ${isListeningForModel ? 'listen-effect' : ''}`}>
+        <div className={`hologram-center ${isListeningForModel ? 'listen-effect' : isResponding ? 'pulse-effect' : ''}`}>
           <img
             src={reverseImage}
             alt="Reverse Hologram"

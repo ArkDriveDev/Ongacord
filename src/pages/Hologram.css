@@ -214,6 +214,7 @@ ion-content.hologram-container {
     }
   }
 }
+
 .listen-effect .reflection-image img {
   animation: listenPulse 0.8s ease-in-out infinite alternate;
 }

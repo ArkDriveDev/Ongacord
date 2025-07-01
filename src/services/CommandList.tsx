@@ -39,38 +39,43 @@ const playAudio = async (sound: string): Promise<void> => {
   }
 };
 
-export const initiateModelChange = async (): Promise<string | null> => {
+export const initiateModelChange = async (): Promise<{
+  modelName: string | null;
+  onListeningStart: () => void;  // Callback when ready to listen
+}> => {
+  // Play Hi.mp3 and wait for it to finish
   await playAudio('hi');
-  // The green blink will be handled by the Hologram component's state
-  return new Promise((resolve) => {
-    VoiceService.startModelSelection(6000, (modelName) => {
-      resolve(modelName || null);
-    });
-  });
+
+  return {
+    modelName: await new Promise<string | null>((resolve) => {
+      VoiceService.startModelSelection(6000, resolve);
+    }),
+    onListeningStart: () => { }  // No-op, just for type safety
+  };
 };
 
 export const CommandList = async (command: string): Promise<{
   action: 'changeModel' | 'hello' | 'unknown' | 'timeout' | 'invalidModel';
   model?: ImageData;
+  onListeningStart?: () => void;  // Callback trigger
 }> => {
   const normalized = command.trim().toLowerCase();
 
-  // 1. Handle model change command
   if (normalized.includes("change")) {
-    const modelName = await initiateModelChange();
-    
+    const { modelName, onListeningStart } = await initiateModelChange();
+
+    // Signal that Hi.mp3 is done and we're listening
+    if (onListeningStart) onListeningStart();
+
     if (!modelName) {
       await playAudio('pikmin');
       return { action: 'timeout' };
     }
 
     const model = await findModelByName(modelName);
-    if (model) {
-      return { action: 'changeModel', model };
-    }
-
-    await playAudio('pikmin');
-    return { action: 'invalidModel' };
+    return model
+      ? { action: 'changeModel', model }
+      : { action: 'invalidModel' };
   }
 
   // 2. Handle hello command
