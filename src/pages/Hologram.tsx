@@ -241,7 +241,7 @@ const Hologram: React.FC = () => {
       </IonHeader>
 
       <IonContent fullscreen className="hologram-container">
-        <div className={`hologram-center ${isResponding ? 'pulse-effect' : ''}`}>
+        <div className={`hologram-center ${isResponding ? 'pulse-effect' : ''} ${isListeningForModel ? 'listen-effect' : ''}`}>
           <img
             src={reverseImage}
             alt="Reverse Hologram"
