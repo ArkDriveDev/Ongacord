@@ -24,14 +24,14 @@ interface ImageData {
 }
 
 const APP_IMAGES: ImageData[] = [
-  { id: 1, name: 'Orb 1', src: Orb1 },
-  { id: 2, name: 'Orb 2', src: Orb2 },
-  { id: 3, name: 'Orb 3', src: Orb3 },
-  { id: 4, name: 'Orb 4', src: Orb4 },
-  { id: 5, name: 'Jelly Fish 1', src: JellyFish1 },
-  { id: 6, name: 'Jelly Fish 2', src: JellyFish2 },
-  { id: 7, name: 'Jelly Fish 3', src: JellyFish3 },
-  { id: 8, name: 'Jelly Fish 4', src: JellyFish4 },
+  { id: 1, name: 'Ball 1.', src: Orb1 },
+  { id: 2, name: 'Ball 2.', src: Orb2 },
+  { id: 3, name: 'Ball 3.', src: Orb3 },
+  { id: 4, name: 'Ball 4.', src: Orb4 },
+  { id: 5, name: 'Jellyfish 1.', src: JellyFish1 },
+  { id: 6, name: 'Jellyfish 2.', src: JellyFish2 },
+  { id: 7, name: 'Jellyfish 3.', src: JellyFish3 },
+  { id: 8, name: 'Jellyfish 4.', src: JellyFish4 },
 ];
 
 const Models: React.FC = () => {
