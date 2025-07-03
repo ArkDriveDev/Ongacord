@@ -21,6 +21,7 @@ class VoiceService {
   private readonly MAX_RESTART_ATTEMPTS = 3;
   private isRestarting = false;
 
+  // New model selection state
   private isExpectingModel = false;
   private modelChangeCallback: ((modelName: string) => void) | null = null;
   private modelTimeout: number | null = null;
@@ -49,14 +50,14 @@ class VoiceService {
     }
 
     this.recognition = new SpeechRecog();
-    this.recognition.continuous = false; // Prevents "tululut" sound
+    this.recognition.continuous = true;
     this.recognition.interimResults = false;
     this.recognition.lang = "en-US";
     this.recognition.maxAlternatives = 1;
 
-    // this.recognition.onaudiostart = () => {
-    //   this.applyAudioConstraints(); // Commented out to avoid triggering sounds
-    // };
+    this.recognition.onaudiostart = () => {
+      this.applyAudioConstraints();
+    };
 
     this.recognition.onresult = (event: SpeechRecognitionEvent) => {
       if (this.shouldIgnoreInput()) return;
@@ -117,25 +118,43 @@ class VoiceService {
   }
 
   private async safeRestart(): Promise<void> {
-    if (this.isRestarting || !this.isListening || this.shouldIgnoreInput()) return;
-
+    if (this.isRestarting) return;
     this.isRestarting = true;
 
     try {
+      if (!this.recognition || !this.isListening || this.shouldIgnoreInput()) {
+        return;
+      }
+
+      // More thorough state checking
       const currentState = this.getRecognitionState();
+      if (currentState === 'running') {
+        return;
+      }
+
+      // Ensure clean stop before restart
       if (currentState !== 'inactive') {
         try {
-          this.recognition?.stop();
-          await new Promise(resolve => setTimeout(resolve, 200));
+          this.recognition.stop();
+          await new Promise(resolve => setTimeout(resolve, 200)); // Increased delay
         } catch (stopError) {
           console.warn("Error stopping recognition:", stopError);
         }
       }
 
-      if (this.getRecognitionState() === 'inactive') {
-        this.recognition?.start();
-        this.restartAttempts = 0;
-        console.debug("Recognition restarted successfully");
+      // Additional check before starting
+      if (this.isListening && !this.shouldIgnoreInput() && this.getRecognitionState() === 'inactive') {
+        try {
+          this.recognition.start();
+          this.restartAttempts = 0;
+          console.debug("Recognition restarted successfully");
+        } catch (startError) {
+          if (startError instanceof DOMException && startError.name === 'InvalidStateError') {
+            console.debug("Recognition already running, ignoring restart");
+            return;
+          }
+          throw startError;
+        }
       }
     } catch (error) {
       console.warn("Restart attempt failed:", error);
@@ -152,13 +171,13 @@ class VoiceService {
       this.isRestarting = false;
     }
   }
-
+  // MODEL SELECTION METHODS
   public startModelSelection(timeoutMs: number, callback: (modelName: string) => void): void {
     this.isExpectingModel = true;
     this.modelChangeCallback = callback;
     this.modelTimeout = window.setTimeout(() => {
       this.cancelModelSelection();
-      callback('');
+      callback(''); // Empty string indicates timeout
     }, timeoutMs);
   }
 
@@ -175,6 +194,7 @@ class VoiceService {
     return this.isExpectingModel;
   }
 
+  // EXISTING VOICE SERVICE METHODS
   public async startListening(onResult: (command: string) => void): Promise<boolean> {
     if (!this.recognition) return false;
 
