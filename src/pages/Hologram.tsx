@@ -93,41 +93,57 @@ const Hologram: React.FC = () => {
     wanyaSound.play().catch(e => console.error("Failed to play audio:", e));
   };
 
-  const handleModelChange = useCallback(async (modelName: string | HologramModel | null) => {
-    if (!modelName) {
-      setIsModelChanging(false);
+ const handleModelChange = useCallback(async (modelName: string | HologramModel | null) => {
+  if (!modelName) {
+    setIsModelChanging(false);
+    return;
+  }
+
+  try {
+    setIsModelChanging(true);
+    VoiceService.setSystemAudioState(true); // Pause recognition
+      
+    // If it's already a model object (from click)
+    if (typeof modelName !== 'string') {
+      setSelectedModel(modelName);
+      await new Promise<void>((resolve) => {
+        successSound.onended = () => resolve();
+        successSound.onerror = () => resolve();
+        successSound.play().catch(e => {
+          console.error("Failed to play audio:", e);
+          resolve();
+        });
+      });
       return;
     }
 
-    try {
-      setIsModelChanging(true);
-      
-      // If it's already a model object (from click)
-      if (typeof modelName !== 'string') {
-        setSelectedModel(modelName);
-        successSound.play().catch(e => console.error("Failed to play audio:", e));
-        return;
-      }
+    // If it's a string (from voice command)
+    const models = await fetchAvailableModels();
+    const normalizedInput = modelName.toLowerCase().trim();
 
-      // If it's a string (from voice command)
-      const models = await fetchAvailableModels();
-      const normalizedInput = modelName.toLowerCase().trim();
+    const model = models.find(m =>
+      m.name.toLowerCase() === normalizedInput ||
+      m.name.toLowerCase().includes(normalizedInput)
+    );
 
-      const model = models.find(m =>
-        m.name.toLowerCase() === normalizedInput ||
-        m.name.toLowerCase().includes(normalizedInput)
-      );
-
-      if (model) {
-        setSelectedModel(model);
-        successSound.play().catch(e => console.error("Failed to play audio:", e));
-      }
-    } catch (error) {
-      console.error("Model change error:", error);
-    } finally {
-      setIsModelChanging(false);
+    if (model) {
+      setSelectedModel(model);
+      await new Promise<void>((resolve) => {
+        successSound.onended = () => resolve();
+        successSound.onerror = () => resolve();
+        successSound.play().catch(e => {
+          console.error("Failed to play audio:", e);
+          resolve();
+        });
+      });
     }
-  }, []);
+  } catch (error) {
+    console.error("Model change error:", error);
+  } finally {
+    VoiceService.setSystemAudioState(false); // Resume recognition
+    setIsModelChanging(false);
+  }
+}, []);
 
   const handleVoiceCommand = useCallback(async (command: string) => {
     try {
