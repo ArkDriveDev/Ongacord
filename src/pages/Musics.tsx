@@ -32,7 +32,10 @@ const Musics: React.FC = () => {
   ];
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [centeredCard, setCenteredCard] = useState<number | null>(1); // Default to first card
+  const [centeredCard, setCenteredCard] = useState<number | null>(1);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   const [musicItems, setMusicItems] = useState<MusicItem[]>([
     { id: 1, title: 'Bumble Bee', audioSrc: Music1, isPlaying: false },
@@ -66,7 +69,42 @@ const Musics: React.FC = () => {
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setStartX(e.pageX - (containerRef.current?.offsetLeft || 0));
+    setScrollLeft(containerRef.current?.scrollLeft || 0);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !containerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - (containerRef.current.offsetLeft || 0);
+    const walk = (x - startX) * 2;
+    containerRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    setStartX(e.touches[0].pageX - (containerRef.current?.offsetLeft || 0));
+    setScrollLeft(containerRef.current?.scrollLeft || 0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !containerRef.current) return;
+    e.preventDefault();
+    const x = e.touches[0].pageX - (containerRef.current.offsetLeft || 0);
+    const walk = (x - startX) * 2;
+    containerRef.current.scrollLeft = scrollLeft - walk;
+  };
+
   const togglePlay = (id: number) => {
+    // Prevent play/pause during drag
+    if (isDragging) return;
+
     setMusicItems(prevItems => 
       prevItems.map(item => {
         if (item.id === id) {
@@ -119,7 +157,18 @@ const Musics: React.FC = () => {
       </IonHeader>
       
       <IonContent fullscreen>
-        <div className="music-container" ref={containerRef}>
+        <div 
+          className="music-container" 
+          ref={containerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleMouseUp}
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        >
           <IonGrid className="music-grid">
             <IonRow className="music-row">
               {musicItems.map((item, index) => (
@@ -127,6 +176,12 @@ const Musics: React.FC = () => {
                   <IonCard 
                     className={`music-card ${centeredCard === item.id ? 'snap-center' : ''} ${item.isPlaying ? 'playing' : ''}`}
                     data-id={item.id}
+                    onClick={(e) => {
+                      if (isDragging) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
                   >
                     <img 
                       alt="Music cover" 
