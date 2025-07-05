@@ -33,39 +33,35 @@ const Hologram: React.FC = () => {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
   const [isReversed, setIsReversed] = useState(false);
+  const [isModelChanging, setIsModelChanging] = useState(false);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [isModelChanging, setIsModelChanging] = useState(false);
-  const [modelChangeTimeout, setModelChangeTimeout] = useState<NodeJS.Timeout | null>(null);
-
-  const wanyaSound = useRef(new Audio()).current;
-  useEffect(() => {
-    wanyaSound.src = wanya;
-    wanyaSound.load();
-  }, []);
+  const modelChangeTimeout = useRef<NodeJS.Timeout | null>(null);
   
-  const successSound = useRef(new Audio()).current;
-  useEffect(() => {
-    successSound.src = success;
-    successSound.load();
-  }, []);
+  // Audio refs
+  const wanyaSound = useRef(new Audio(wanya)).current;
+  const successSound = useRef(new Audio(success)).current;
 
   useEffect(() => {
+    // Initialize audio elements
+    wanyaSound.load();
+    successSound.load();
+    
+    // Set up aria-hidden observer
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' &&
-          mutation.attributeName === 'aria-hidden' &&
-          mutation.target instanceof HTMLElement &&
-          mutation.target.id === 'main-content') {
-          mutation.target.removeAttribute('aria-hidden');
+        if (mutation.type === 'attributes' && mutation.attributeName === 'aria-hidden') {
+          const target = mutation.target as HTMLElement;
+          if (target.id === 'main-content') {
+            target.removeAttribute('aria-hidden');
+          }
         }
       });
     });
 
     const mainContent = document.getElementById('main-content');
-    if (mainContent) {
-      observer.observe(mainContent, { attributes: true });
-    }
+    if (mainContent) observer.observe(mainContent, { attributes: true });
 
     return () => observer.disconnect();
   }, []);
@@ -75,51 +71,48 @@ const Hologram: React.FC = () => {
   }, [location.state]);
 
   const playHelloSound = () => {
-    if (audioRef.current) {
-      VoiceService.setSystemAudioState(true);
-      setIsResponding(true);
+    if (!audioRef.current) return;
+    
+    VoiceService.setSystemAudioState(true);
+    setIsResponding(true);
 
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(e => console.error("Audio play error:", e));
+    audioRef.current.currentTime = 0;
+    audioRef.current.play().catch(e => console.error("Audio play error:", e));
 
-      audioRef.current.onended = () => {
-        VoiceService.setSystemAudioState(false);
-        setIsResponding(false);
-      };
-
-      audioRef.current.onerror = () => {
-        VoiceService.setSystemAudioState(false);
-        setIsResponding(false);
-      };
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-        VoiceService.setSpeakingState(false);
-      }
+    const handleAudioEnd = () => {
+      VoiceService.setSystemAudioState(false);
+      setIsResponding(false);
     };
-  }, []);
+
+    audioRef.current.onended = handleAudioEnd;
+    audioRef.current.onerror = handleAudioEnd;
+  };
 
   const handleReverseClick = () => {
     setIsReversed(!isReversed);
     wanyaSound.play().catch(e => console.error("Failed to play audio:", e));
   };
 
-  const handleModelChange = useCallback(async (modelName: string | null) => {
+  const handleModelChange = useCallback(async (modelName: string | HologramModel | null) => {
     if (!modelName) {
       setIsModelChanging(false);
       return;
     }
 
     try {
+      setIsModelChanging(true);
+      
+      // If it's already a model object (from click)
+      if (typeof modelName !== 'string') {
+        setSelectedModel(modelName);
+        successSound.play().catch(e => console.error("Failed to play audio:", e));
+        return;
+      }
+
+      // If it's a string (from voice command)
       const models = await fetchAvailableModels();
       const normalizedInput = modelName.toLowerCase().trim();
 
-      // Find matching model
       const model = models.find(m =>
         m.name.toLowerCase() === normalizedInput ||
         m.name.toLowerCase().includes(normalizedInput)
@@ -127,10 +120,10 @@ const Hologram: React.FC = () => {
 
       if (model) {
         setSelectedModel(model);
+        successSound.play().catch(e => console.error("Failed to play audio:", e));
       }
     } catch (error) {
       console.error("Model change error:", error);
-      // Optional: Play error sound
     } finally {
       setIsModelChanging(false);
     }
@@ -139,17 +132,12 @@ const Hologram: React.FC = () => {
   const handleVoiceCommand = useCallback(async (command: string) => {
     try {
       setIsResponding(true);
-
-      if (responseTimeoutRef.current) {
-        clearTimeout(responseTimeoutRef.current);
-      }
+      clearTimeout(responseTimeoutRef.current as NodeJS.Timeout);
 
       const result = await CommandList(command);
 
       if (result.action === 'changeModel' && result.model) {
-        setIsModelChanging(true);
-        setSelectedModel(result.model);
-        successSound.play().catch(e => console.error("Failed to play audio:", e));
+        await handleModelChange(result.model);
       }
 
       responseTimeoutRef.current = setTimeout(() => {
@@ -159,12 +147,10 @@ const Hologram: React.FC = () => {
       console.error("Command error:", error);
       setIsResponding(false);
     }
-  }, []);
+  }, [handleModelChange]);
 
   useIonViewWillEnter(() => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
+    document.activeElement instanceof HTMLElement && document.activeElement.blur();
 
     audioRef.current = new Audio(hello);
     audioRef.current.preload = 'auto';
@@ -177,10 +163,7 @@ const Hologram: React.FC = () => {
 
         const started = await VoiceService.startListening(handleVoiceCommand);
         setIsVoiceActive(started);
-
-        if (started) {
-          playHelloSound();
-        }
+        started && playHelloSound();
       } catch (error) {
         console.error("Voice init error:", error);
         setPermissionGranted(false);
@@ -190,12 +173,8 @@ const Hologram: React.FC = () => {
     initialize();
 
     if (audioRef.current) {
-      audioRef.current.onended = () => {
-        setIsResponding(false);
-      };
-      audioRef.current.onplay = () => {
-        setIsResponding(true);
-      };
+      audioRef.current.onended = () => setIsResponding(false);
+      audioRef.current.onplay = () => setIsResponding(true);
     }
   });
 
@@ -203,21 +182,16 @@ const Hologram: React.FC = () => {
     VoiceService.stopListening();
     setIsVoiceActive(false);
     setIsResponding(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    if (responseTimeoutRef.current) {
-      clearTimeout(responseTimeoutRef.current);
-    }
-    if (modelChangeTimeout) {
-      clearTimeout(modelChangeTimeout);
-    }
+    
+    audioRef.current?.pause();
+    audioRef.current = null;
+    
+    clearTimeout(responseTimeoutRef.current as NodeJS.Timeout);
+    clearTimeout(modelChangeTimeout.current as NodeJS.Timeout);
   });
 
   useIonViewDidEnter(() => {
-    const hiddenPages = document.querySelectorAll('.ion-page-hidden');
-    hiddenPages.forEach(page => {
+    document.querySelectorAll('.ion-page-hidden').forEach(page => {
       page.setAttribute('inert', '');
       page.removeAttribute('aria-hidden');
     });
@@ -249,10 +223,7 @@ const Hologram: React.FC = () => {
           />
           <div className={`reflection-base ${isReversed ? 'reversed' : ''}`}>
             {['top', 'right', 'bottom', 'left'].map((position) => (
-              <div
-                key={position}
-                className={`reflection-image ${position}`}
-              >
+              <div key={position} className={`reflection-image ${position}`}>
                 <img
                   src={selectedModel.src}
                   alt={`${position} Reflection`}
@@ -264,18 +235,7 @@ const Hologram: React.FC = () => {
         </div>
 
         {!permissionGranted && (
-          <div style={{
-            position: 'fixed',
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            color: 'white',
-            padding: '10px 20px',
-            borderRadius: '20px',
-            zIndex: 1000,
-            textAlign: 'center'
-          }}>
+          <div className="permission-warning">
             Microphone access required for voice commands
           </div>
         )}
