@@ -1,7 +1,6 @@
 import {
   IonContent, IonHeader, IonPage, IonTitle, IonToolbar,
-  IonGrid, IonRow, IonCol, IonCard, IonCardContent, IonImg,
-  IonButton
+  IonGrid, IonRow, IonCol, IonCard, IonCardContent, IonImg
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { useState, useEffect } from 'react';
