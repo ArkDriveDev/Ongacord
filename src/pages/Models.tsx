@@ -1,3 +1,4 @@
+// Models.tsx
 import {
   IonContent, IonHeader, IonPage, IonTitle, IonToolbar,
   IonGrid, IonRow, IonCol, IonCard, IonCardContent, IonImg
@@ -6,7 +7,6 @@ import { useHistory } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import ModelSearch from '../components/ModelsProps/ModelSearch';
 
-// Import all images directly
 import Orb1 from '../images/Orb1.gif';
 import Orb2 from '../images/Orb2.gif';
 import Orb3 from '../images/Orb3.gif';
@@ -38,29 +38,34 @@ const Models: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-     const observer = new MutationObserver((mutations) => {
-       mutations.forEach((mutation) => {
-         if (mutation.type === 'attributes' &&
-           mutation.attributeName === 'aria-hidden' &&
-           mutation.target instanceof HTMLElement &&
-           mutation.target.id === 'main-content') {
-           mutation.target.removeAttribute('aria-hidden');
-         }
-       });
-     });
- 
-     const mainContent = document.getElementById('main-content');
-     if (mainContent) {
-       observer.observe(mainContent, { attributes: true });
-     }
- 
-     return () => observer.disconnect();
-   }, []);
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.type === 'attributes' &&
+          mutation.attributeName === 'aria-hidden' &&
+          mutation.target instanceof HTMLElement &&
+          mutation.target.id === 'main-content'
+        ) {
+          mutation.target.removeAttribute('aria-hidden');
+        }
+      });
+    });
+
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      observer.observe(mainContent, { attributes: true });
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   const handleModelClick = (model: ImageData) => {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
+
+    // Save selected model to localStorage
+    localStorage.setItem('selectedModel', JSON.stringify(model));
 
     history.push({
       pathname: '/hologram',
