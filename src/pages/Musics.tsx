@@ -45,6 +45,22 @@ const Musics: React.FC = () => {
   const [scrollLeft, setScrollLeft] = useState(0);
   const [currentPlayingId, setCurrentPlayingId] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentProgress, setCurrentProgress] = useState(0);
+
+  // Add this effect to update progress while audio plays
+useEffect(() => {
+  const audio = currentPlayingId ? audioRefs[currentPlayingId - 1].current : null;
+  if (!audio) return;
+
+  const updateProgress = () => {
+    if (audio.duration) {
+      setCurrentProgress((audio.currentTime / audio.duration) * 100);
+    }
+  };
+
+  audio.addEventListener('timeupdate', updateProgress);
+  return () => audio.removeEventListener('timeupdate', updateProgress);
+}, [currentPlayingId]);
 
   // Only MusicPlayButton functionality
   const handlePlayPause = (id: number) => {
