@@ -48,19 +48,19 @@ const Musics: React.FC = () => {
   const [currentProgress, setCurrentProgress] = useState(0);
 
   // Add this effect to update progress while audio plays
-useEffect(() => {
-  const audio = currentPlayingId ? audioRefs[currentPlayingId - 1].current : null;
-  if (!audio) return;
+  useEffect(() => {
+    const audio = currentPlayingId ? audioRefs[currentPlayingId - 1].current : null;
+    if (!audio) return;
 
-  const updateProgress = () => {
-    if (audio.duration) {
-      setCurrentProgress((audio.currentTime / audio.duration) * 100);
-    }
-  };
+    const updateProgress = () => {
+      if (audio.duration) {
+        setCurrentProgress((audio.currentTime / audio.duration) * 100);
+      }
+    };
 
-  audio.addEventListener('timeupdate', updateProgress);
-  return () => audio.removeEventListener('timeupdate', updateProgress);
-}, [currentPlayingId]);
+    audio.addEventListener('timeupdate', updateProgress);
+    return () => audio.removeEventListener('timeupdate', updateProgress);
+  }, [currentPlayingId]);
 
   // Only MusicPlayButton functionality
   const handlePlayPause = (id: number) => {
@@ -301,7 +301,16 @@ useEffect(() => {
         {/* Player Card */}
         <IonCard className="music-player-card">
           <div className="ion-padding">
-            <MusicSpectrum />
+            <MusicSpectrum
+              progress={currentProgress}
+              onSeek={(newProgress) => {
+                const audio = currentPlayingId ? audioRefs[currentPlayingId - 1].current : null;
+                if (audio) {
+                  audio.currentTime = (newProgress / 100) * audio.duration;
+                }
+              }}
+              disabled={!currentPlayingId}
+            />
             <div className="player-controls">
               <MusicPassBackward />
               <MusicRestartButton />

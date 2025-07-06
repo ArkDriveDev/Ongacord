@@ -1,3 +1,5 @@
+import React, { useRef} from 'react';
+
 interface MusicSpectrumProps {
   progress: number;
   onSeek?: (progress: number) => void;
@@ -65,3 +67,5 @@ const MusicSpectrum: React.FC<MusicSpectrumProps> = ({
     </div>
   );
 };
+
+export default MusicSpectrum;
