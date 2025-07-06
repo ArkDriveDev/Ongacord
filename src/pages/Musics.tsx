@@ -136,36 +136,47 @@ const Musics: React.FC = () => {
     };
   };
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+ useEffect(() => {
+  const container = containerRef.current;
+  if (!container) return;
 
-    const handleScroll = debounce(() => {
-      const containerCenter = container.offsetWidth / 2;
-      const cards = Array.from(container.querySelectorAll('.music-card'));
+  const handleScroll = debounce(() => {
+    const containerCenter = container.offsetWidth / 2;
+    const cards = Array.from(container.querySelectorAll('.music-card'));
 
-      let closestCardId: number | null = null;
-      let closestDistance = Infinity;
+    let closestCardId: number | null = null;
+    let closestDistance = Infinity;
 
-      cards.forEach((card) => {
-        const rect = card.getBoundingClientRect();
-        const cardCenter = rect.left + rect.width / 2;
-        const distance = Math.abs(containerCenter - cardCenter);
+    cards.forEach((card) => {
+      const rect = card.getBoundingClientRect();
+      const cardCenter = rect.left + rect.width / 2;
+      const distance = Math.abs(containerCenter - cardCenter);
 
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closestCardId = Number(card.getAttribute('data-id'));
-        }
-      });
-
-      if (closestCardId !== centeredCard) {
-        setCenteredCard(closestCardId);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestCardId = Number(card.getAttribute('data-id'));
       }
     });
 
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [centeredCard]);
+    if (closestCardId !== centeredCard) {
+      // Pause currently playing audio if any
+      if (currentPlayingId) {
+        const currentAudio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
+        if (currentAudio) {
+          currentAudio.pause();
+          setIsPlaying(false);
+          setCurrentProgress(0); // Reset progress bar
+        }
+      }
+      
+      // Update centered card
+      setCenteredCard(closestCardId);
+    }
+  });
+
+  container.addEventListener('scroll', handleScroll);
+  return () => container.removeEventListener('scroll', handleScroll);
+}, [centeredCard, currentPlayingId]); // Added currentPlayingId to dependencies
 
   // Search functionality
   const handleSearch = (query: string) => {
