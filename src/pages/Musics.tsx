@@ -63,30 +63,36 @@ const Musics: React.FC = () => {
   }, [currentPlayingId]);
 
   // Only MusicPlayButton functionality
-  const handlePlayPause = (id: number) => {
-    const audioRef = audioRefs[id - 1].current;
-    if (!audioRef) return;
+ const handlePlayPause = (id: number) => {
+  // Find the index in filteredMusicItems
+  const filteredIndex = filteredMusicItems.findIndex(item => item.id === id);
+  if (filteredIndex === -1) return;
 
-    if (currentPlayingId === id) {
-      if (isPlaying) {
-        audioRef.pause();
-      } else {
-        audioRef.play().catch(error => console.error("Playback failed:", error));
-      }
-      setIsPlaying(!isPlaying);
+  const audioRef = audioRefs[filteredMusicItems[filteredIndex].id - 1].current;
+  if (!audioRef) return;
+
+  if (currentPlayingId === id) {
+    if (isPlaying) {
+      audioRef.pause();
     } else {
-      // Pause currently playing audio if any
-      if (currentPlayingId) {
-        audioRefs[currentPlayingId - 1].current?.pause();
-      }
-      // Play new audio
-      audioRef.currentTime = 0;
       audioRef.play().catch(error => console.error("Playback failed:", error));
-      setCurrentPlayingId(id);
-      setIsPlaying(true);
     }
-  };
-
+    setIsPlaying(!isPlaying);
+  } else {
+    // Pause currently playing audio if any
+    if (currentPlayingId) {
+      const currentIndex = filteredMusicItems.findIndex(item => item.id === currentPlayingId);
+      if (currentIndex !== -1) {
+        audioRefs[filteredMusicItems[currentIndex].id - 1].current?.pause();
+      }
+    }
+    // Play new audio
+    audioRef.currentTime = 0;
+    audioRef.play().catch(error => console.error("Playback failed:", error));
+    setCurrentPlayingId(id);
+    setIsPlaying(true);
+  }
+};
   // Handle audio ending
   useEffect(() => {
     audioRefs.forEach((ref, index) => {
