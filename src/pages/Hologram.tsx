@@ -217,6 +217,9 @@ const Hologram: React.FC = () => {
 
     clearTimeout(responseTimeoutRef.current as NodeJS.Timeout);
     clearTimeout(modelChangeTimeout.current as NodeJS.Timeout);
+
+    // Clear model from localStorage
+    localStorage.removeItem('selectedModel');
   });
 
   useIonViewDidEnter(() => {
