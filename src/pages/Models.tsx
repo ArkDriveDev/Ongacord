@@ -36,29 +36,6 @@ const APP_IMAGES: ImageData[] = [
 const Models: React.FC = () => {
   const history = useHistory();
   const [searchQuery, setSearchQuery] = useState('');
-
-  useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (
-          mutation.type === 'attributes' &&
-          mutation.attributeName === 'aria-hidden' &&
-          mutation.target instanceof HTMLElement &&
-          mutation.target.id === 'main-content'
-        ) {
-          mutation.target.removeAttribute('aria-hidden');
-        }
-      });
-    });
-
-    const mainContent = document.getElementById('main-content');
-    if (mainContent) {
-      observer.observe(mainContent, { attributes: true });
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
   const handleModelClick = (model: ImageData) => {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();

@@ -222,13 +222,6 @@ const Hologram: React.FC = () => {
     localStorage.removeItem('selectedModel');
   });
 
-  useIonViewDidEnter(() => {
-    document.querySelectorAll('.ion-page-hidden').forEach(page => {
-      page.setAttribute('inert', '');
-      page.removeAttribute('aria-hidden');
-    });
-  });
-
   return (
     <IonPage style={{ backgroundColor: 'black' }}>
       <IonHeader>
