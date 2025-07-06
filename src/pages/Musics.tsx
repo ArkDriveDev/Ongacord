@@ -63,6 +63,19 @@ const Musics: React.FC = () => {
   const [currentProgress, setCurrentProgress] = useState(0);
   const [filteredMusicItems, setFilteredMusicItems] = useState<MusicItem[]>(musicItems);
 
+  const handleRestart = () => {
+  if (currentPlayingId) {
+    const audio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
+    if (audio) {
+      audio.currentTime = 0;
+      setCurrentProgress(0);
+      if (isPlaying) {
+        audio.play().catch(error => console.error("Playback failed:", error));
+      }
+    }
+  }
+};
+
   // Update progress while audio plays
   useEffect(() => {
     const audio = currentPlayingId ? audioRefs[currentPlayingId as keyof typeof audioRefs].current : null;
