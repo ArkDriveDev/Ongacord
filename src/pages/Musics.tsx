@@ -180,65 +180,60 @@ const Musics: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent fullscreen>
-        <ModelSearch onSearch={handleSearch} />
+      <IonContent fullscreen className="music-page-container">
+  {/* Search Bar */}
+  <div className="search-container">
+    <ModelSearch onSearch={handleSearch} />
+  </div>
 
-        <div
-          className="music-container"
-          ref={containerRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleMouseUp}
-          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-        >
-          <IonGrid className="music-grid">
-            <IonRow className="music-row">
-              {filteredMusicItems.map((item, index) => (
-                <IonCol key={item.id} className="music-col">
-                  <IonCard
-                    className={`music-card ${centeredCard === item.id ? 'snap-center' : ''} ${item.isPlaying ? 'playing' : ''}`}
-                    data-id={item.id}
-                    onClick={(e) => {
-                      if (isDragging) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }
-                    }}
-                  >
-                    <img
-                      alt="Music cover"
-                      src={MusicImage}
-                      className="music-image"
-                    />
-                    <IonCardHeader>
-                      <IonCardTitle>{item.title}</IonCardTitle>
-                    </IonCardHeader>
-                  </IonCard>
-                </IonCol>
-              ))}
-            </IonRow>
-          </IonGrid>
-          <IonCard className="music-card">
-            <IonGrid>
-              <IonRow className="ion-justify-content-center ion-align-items-center ion-padding">
-                <IonCol size="2"><MusicPassBackward /></IonCol>
-                <IonCol size="2"><MusicRestartButton/></IonCol>
-                <IonCol size="2"><MusicPlayButton /></IonCol>
-                <IonCol size="2"><MusicPassforward/></IonCol>
-                <IonCol size="2"><MusicRepeatButton/></IonCol>
-              </IonRow>
-              <IonRow className="ion-justify-content-center ion-padding-top">
-                <IonCol size="6"><MusicPlayAll /></IonCol>
-                <IonCol size="6"><MusicSpectrum /></IonCol>
-              </IonRow>
-            </IonGrid>
-          </IonCard>
-        </div>
-      </IonContent>
+  {/* Horizontal Scrolling Cards (Original Behavior) */}
+  <div
+    className="music-container"
+    ref={containerRef}
+    onMouseDown={handleMouseDown}
+    onMouseMove={handleMouseMove}
+    onMouseUp={handleMouseUp}
+    onMouseLeave={handleMouseUp}
+    onTouchStart={handleTouchStart}
+    onTouchMove={handleTouchMove}
+    onTouchEnd={handleMouseUp}
+  >
+    <div className="music-grid">
+      <div className="music-row">
+        {filteredMusicItems.map((item) => (
+          <div key={item.id} className="music-col">
+            <div
+              className={`music-card ${centeredCard === item.id ? 'snap-center' : ''} ${item.isPlaying ? 'playing' : ''}`}
+              onClick={() => togglePlay(item.id)}
+            >
+              <img src={MusicImage} className="music-image" alt={item.title} />
+              <IonCardHeader>
+                <IonCardTitle>{item.title}</IonCardTitle>
+              </IonCardHeader>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  {/* Player Controls (Fixed Below) */}
+  <IonCard className="music-player-card">
+    <IonGrid>
+      <IonRow className="ion-justify-content-center ion-align-items-center ion-padding">
+        <IonCol size="2"><MusicPassBackward /></IonCol>
+        <IonCol size="2"><MusicRestartButton /></IonCol>
+        <IonCol size="2"><MusicPlayButton /></IonCol>
+        <IonCol size="2"><MusicPassforward /></IonCol>
+        <IonCol size="2"><MusicRepeatButton /></IonCol>
+      </IonRow>
+      <IonRow className="ion-justify-content-center ion-padding-top">
+        <IonCol size="6"><MusicPlayAll /></IonCol>
+        <IonCol size="6"><MusicSpectrum /></IonCol>
+      </IonRow>
+    </IonGrid>
+  </IonCard>
+</IonContent>
     </IonPage>
   );
 };
