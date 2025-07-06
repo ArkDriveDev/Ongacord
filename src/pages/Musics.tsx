@@ -17,12 +17,12 @@ import MusicImage from '../images/Music.png';
 // Components
 import ModelSearch from '../components/ModelsProps/ModelSearch';
 import MusicPassBackward from '../components/MusicsProps/MusicPassBackward';
-import MusicRestartButton from '../components/MusicsProps/MusicRestartButton';
 import MusicPlayButton from '../components/MusicsProps/MusicPlayButton';
 import MusicPassforward from '../components/MusicsProps/MusicPassforward';
 import MusicRepeatButton from '../components/MusicsProps/MusicRepeatButton';
 import MusicPlayAll from '../components/MusicsProps/MusicPlayAll';
 import MusicSpectrum from '../components/MusicsProps/MusicSpectrum';
+import MusicRestartButton from '../components/MusicsProps/MusicRestartButton';
 
 interface MusicItem {
   id: number;
@@ -64,17 +64,17 @@ const Musics: React.FC = () => {
   const [filteredMusicItems, setFilteredMusicItems] = useState<MusicItem[]>(musicItems);
 
   const handleRestart = () => {
-  if (currentPlayingId) {
-    const audio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
-    if (audio) {
-      audio.currentTime = 0;
-      setCurrentProgress(0);
-      if (isPlaying) {
-        audio.play().catch(error => console.error("Playback failed:", error));
+    if (currentPlayingId) {
+      const audio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
+      if (audio) {
+        audio.currentTime = 0;
+        setCurrentProgress(0);
+        if (isPlaying) {
+          audio.play().catch(error => console.error("Playback failed:", error));
+        }
       }
     }
-  }
-};
+  };
 
   // Update progress while audio plays
   useEffect(() => {
@@ -149,63 +149,63 @@ const Musics: React.FC = () => {
     };
   };
 
- useEffect(() => {
-  const container = containerRef.current;
-  if (!container) return;
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-  const handleScroll = debounce(() => {
-    const containerCenter = container.offsetWidth / 2;
-    const cards = Array.from(container.querySelectorAll('.music-card'));
+    const handleScroll = debounce(() => {
+      const containerCenter = container.offsetWidth / 2;
+      const cards = Array.from(container.querySelectorAll('.music-card'));
 
-    let closestCardId: number | null = null;
-    let closestDistance = Infinity;
+      let closestCardId: number | null = null;
+      let closestDistance = Infinity;
 
-    cards.forEach((card) => {
-      const rect = card.getBoundingClientRect();
-      const cardCenter = rect.left + rect.width / 2;
-      const distance = Math.abs(containerCenter - cardCenter);
+      cards.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+        const cardCenter = rect.left + rect.width / 2;
+        const distance = Math.abs(containerCenter - cardCenter);
 
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestCardId = Number(card.getAttribute('data-id'));
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestCardId = Number(card.getAttribute('data-id'));
+        }
+      });
+
+      if (closestCardId !== centeredCard) {
+        // Pause currently playing audio if any
+        if (currentPlayingId) {
+          const currentAudio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
+          if (currentAudio) {
+            currentAudio.pause();
+            setIsPlaying(false);
+            setCurrentProgress(0); // Reset progress bar
+          }
+        }
+
+        // Update centered card
+        setCenteredCard(closestCardId);
       }
     });
 
-    if (closestCardId !== centeredCard) {
-      // Pause currently playing audio if any
-      if (currentPlayingId) {
-        const currentAudio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
-        if (currentAudio) {
-          currentAudio.pause();
-          setIsPlaying(false);
-          setCurrentProgress(0); // Reset progress bar
-        }
-      }
-      
-      // Update centered card
-      setCenteredCard(closestCardId);
-    }
-  });
-
-  container.addEventListener('scroll', handleScroll);
-  return () => container.removeEventListener('scroll', handleScroll);
-}, [centeredCard, currentPlayingId]); // Added currentPlayingId to dependencies
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [centeredCard, currentPlayingId]); // Added currentPlayingId to dependencies
 
   // Search functionality
   const handleSearch = (query: string) => {
-  const filtered = musicItems.filter(item =>
-    item.title.toLowerCase().includes(query.toLowerCase())
-  );
-  setFilteredMusicItems(filtered);
-  
-  // If current playing song is not in filtered results, stop playback
-  if (currentPlayingId && !filtered.some(item => item.id === currentPlayingId)) {
-    audioRefs[currentPlayingId as keyof typeof audioRefs].current?.pause();
-    setCurrentPlayingId(null);
-    setIsPlaying(false);
-    setCurrentProgress(0);
-  }
-};
+    const filtered = musicItems.filter(item =>
+      item.title.toLowerCase().includes(query.toLowerCase())
+    );
+    setFilteredMusicItems(filtered);
+
+    // If current playing song is not in filtered results, stop playback
+    if (currentPlayingId && !filtered.some(item => item.id === currentPlayingId)) {
+      audioRefs[currentPlayingId as keyof typeof audioRefs].current?.pause();
+      setCurrentPlayingId(null);
+      setIsPlaying(false);
+      setCurrentProgress(0);
+    }
+  };
 
   // Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -241,36 +241,36 @@ const Musics: React.FC = () => {
   };
 
   // Handle card clicks
- const handleCardClick = (id: number) => {
-  const container = containerRef.current;
-  if (!container) return;
+  const handleCardClick = (id: number) => {
+    const container = containerRef.current;
+    if (!container) return;
 
-  const card = container.querySelector(`.music-card[data-id="${id}"]`);
-  if (!card) return;
+    const card = container.querySelector(`.music-card[data-id="${id}"]`);
+    if (!card) return;
 
-  // Pause currently playing audio if any
-  if (currentPlayingId) {
-    const currentAudio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
-    if (currentAudio) {
-      currentAudio.pause();
-      setIsPlaying(false);
-      setCurrentProgress(0); // Reset progress
+    // Pause currently playing audio if any
+    if (currentPlayingId) {
+      const currentAudio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
+      if (currentAudio) {
+        currentAudio.pause();
+        setIsPlaying(false);
+        setCurrentProgress(0); // Reset progress
+      }
     }
-  }
 
-  const containerWidth = container.offsetWidth;
-  const cardRect = card.getBoundingClientRect();
-  const cardLeft = cardRect.left + container.scrollLeft;
-  const cardWidth = cardRect.width;
-  const scrollTo = cardLeft - (containerWidth / 2) + (cardWidth / 2);
+    const containerWidth = container.offsetWidth;
+    const cardRect = card.getBoundingClientRect();
+    const cardLeft = cardRect.left + container.scrollLeft;
+    const cardWidth = cardRect.width;
+    const scrollTo = cardLeft - (containerWidth / 2) + (cardWidth / 2);
 
-  container.scrollTo({
-    left: scrollTo,
-    behavior: 'smooth'
-  });
+    container.scrollTo({
+      left: scrollTo,
+      behavior: 'smooth'
+    });
 
-  setCenteredCard(id);
-};
+    setCenteredCard(id);
+  };
 
   return (
     <IonPage>
@@ -316,9 +316,9 @@ const Musics: React.FC = () => {
                   <IonCardHeader>
                     <IonCardTitle>{item.title}</IonCardTitle>
                   </IonCardHeader>
-                  <audio 
-                    ref={audioRefs[item.id as keyof typeof audioRefs]} 
-                    src={item.audioSrc} 
+                  <audio
+                    ref={audioRefs[item.id as keyof typeof audioRefs]}
+                    src={item.audioSrc}
                   />
                 </IonCard>
               </div>
@@ -343,7 +343,10 @@ const Musics: React.FC = () => {
             />
             <div className="player-controls">
               <MusicPassBackward />
-              <MusicRestartButton />
+              <MusicRestartButton
+                onRestart={handleRestart}
+                disabled={!currentPlayingId}
+              />
               <MusicPlayButton
                 isPlaying={currentPlayingId !== null && isPlaying}
                 onPlayPause={() => centeredCard && handlePlayPause(centeredCard)}
