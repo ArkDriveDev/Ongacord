@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
+import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
   IonCard, IonCardHeader, IonCardTitle, IonCardContent,
-  IonRow, IonCol, IonGrid 
+  IonRow, IonCol, IonGrid
 } from '@ionic/react';
 
 // Import audio files
@@ -14,6 +14,13 @@ import Music4 from '../Musics/See tin.mp3';
 // Import default music image
 import MusicImage from '../images/Music.png';
 import ModelSearch from '../components/ModelsProps/ModelSearch';
+import MusicPassBackward from '../components/MusicsProps/MusicPassBackward';
+import MusicRestartButton from '../components/MusicsProps/MusicRestartButton';
+import MusicPlayButton from '../components/MusicsProps/MusicPlayButton';
+import MusicPassforward from '../components/MusicsProps/MusicPassforward';
+import MusicRepeatButton from '../components/MusicsProps/MusicRepeatButton';
+import MusicPlayAll from '../components/MusicsProps/MusicPlayAll';
+import MusicSpectrum from '../components/MusicsProps/MusicSpectrum';
 
 interface MusicItem {
   id: number;
@@ -52,7 +59,7 @@ const Musics: React.FC = () => {
     const handleScroll = () => {
       const containerWidth = container.offsetWidth;
       const scrollPosition = container.scrollLeft + containerWidth / 2;
-      
+
       const cards = Array.from(document.querySelectorAll('.music-card'));
       const centered = cards.find(card => {
         const rect = card.getBoundingClientRect();
@@ -116,10 +123,10 @@ const Musics: React.FC = () => {
   const togglePlay = (id: number) => {
     if (isDragging) return;
 
-    setMusicItems(prevItems => 
+    setMusicItems(prevItems =>
       prevItems.map(item => {
         if (item.id === id) {
-          const audioRef = audioRefs[id-1].current;
+          const audioRef = audioRefs[id - 1].current;
           if (!item.isPlaying) {
             prevItems.forEach((otherItem, index) => {
               if (otherItem.id !== id && audioRefs[index].current) {
@@ -127,7 +134,7 @@ const Musics: React.FC = () => {
                 audioRefs[index].current!.currentTime = 0;
               }
             });
-            audioRef?.play().catch(error => 
+            audioRef?.play().catch(error =>
               console.error('Audio playback failed:', error)
             );
           } else {
@@ -145,9 +152,9 @@ const Musics: React.FC = () => {
       const containerWidth = container.offsetWidth;
       const cardRect = cardElement.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
-      
+
       const scrollTo = cardRect.left - containerRect.left + container.scrollLeft - (containerWidth / 2) + (cardRect.width / 2);
-      
+
       container.scrollTo({
         left: scrollTo,
         behavior: 'smooth'
@@ -156,7 +163,7 @@ const Musics: React.FC = () => {
   };
 
   const restartMusic = (id: number) => {
-    const audioRef = audioRefs[id-1].current;
+    const audioRef = audioRefs[id - 1].current;
     if (audioRef) {
       audioRef.currentTime = 0;
       if (musicItems.find(item => item.id === id)?.isPlaying) {
@@ -172,12 +179,12 @@ const Musics: React.FC = () => {
           <IonTitle>Musics</IonTitle>
         </IonToolbar>
       </IonHeader>
-      
+
       <IonContent fullscreen>
         <ModelSearch onSearch={handleSearch} />
-        
-        <div 
-          className="music-container" 
+
+        <div
+          className="music-container"
           ref={containerRef}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -192,7 +199,7 @@ const Musics: React.FC = () => {
             <IonRow className="music-row">
               {filteredMusicItems.map((item, index) => (
                 <IonCol key={item.id} className="music-col">
-                  <IonCard 
+                  <IonCard
                     className={`music-card ${centeredCard === item.id ? 'snap-center' : ''} ${item.isPlaying ? 'playing' : ''}`}
                     data-id={item.id}
                     onClick={(e) => {
@@ -202,9 +209,9 @@ const Musics: React.FC = () => {
                       }
                     }}
                   >
-                    <img 
-                      alt="Music cover" 
-                      src={MusicImage} 
+                    <img
+                      alt="Music cover"
+                      src={MusicImage}
                       className="music-image"
                     />
                     <IonCardHeader>
@@ -215,6 +222,21 @@ const Musics: React.FC = () => {
               ))}
             </IonRow>
           </IonGrid>
+          <IonCard className="music-card">
+            <IonGrid>
+              <IonRow className="ion-justify-content-center ion-align-items-center ion-padding">
+                <IonCol size="2"><MusicPassBackward /></IonCol>
+                <IonCol size="2"><MusicRestartButton/></IonCol>
+                <IonCol size="2"><MusicPlayButton /></IonCol>
+                <IonCol size="2"><MusicPassforward/></IonCol>
+                <IonCol size="2"><MusicRepeatButton/></IonCol>
+              </IonRow>
+              <IonRow className="ion-justify-content-center ion-padding-top">
+                <IonCol size="6"><MusicPlayAll /></IonCol>
+                <IonCol size="6"><MusicSpectrum /></IonCol>
+              </IonRow>
+            </IonGrid>
+          </IonCard>
         </div>
       </IonContent>
     </IonPage>

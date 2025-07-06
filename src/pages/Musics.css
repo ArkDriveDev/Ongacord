@@ -149,3 +149,33 @@
 .music-card.playing .restart-button {
   --color: var(--ion-color-danger);
 }
+.music-card {
+  background: linear-gradient(135deg, #1f1c2c, #928dab);
+  padding: 1rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  color: white;
+}
+
+ion-button {
+  --border-radius: 50%;
+  --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  --padding-start: 0.75rem;
+  --padding-end: 0.75rem;
+  font-size: 1.25rem;
+}
+
+ion-icon {
+  font-size: 1.6rem;
+}
+
+ion-button.block-button {
+  width: 100%;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.music-card ion-row {
+  margin-top: 0.75rem;
+}
