@@ -1,18 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
-  IonCard, IonCardHeader, IonCardTitle, IonCardContent,
-  IonRow, IonCol, IonGrid
+  IonCard, IonCardHeader, IonCardTitle
 } from '@ionic/react';
+import './Musics.css';
 
-// Import audio files
+// Audio files
 import Music1 from '../Musics/Bumble bee.mp3';
 import Music2 from '../Musics/Chicken Dance.mp3';
 import Music3 from '../Musics/Pretty little baby.mp3';
 import Music4 from '../Musics/See tin.mp3';
 
-// Import default music image
+// Images
 import MusicImage from '../images/Music.png';
+
+// Components
 import ModelSearch from '../components/ModelsProps/ModelSearch';
 import MusicPassBackward from '../components/MusicsProps/MusicPassBackward';
 import MusicRestartButton from '../components/MusicsProps/MusicRestartButton';
@@ -52,30 +54,45 @@ const Musics: React.FC = () => {
 
   const [filteredMusicItems, setFilteredMusicItems] = useState<MusicItem[]>(musicItems);
 
+  // Debounce function for smoother scroll handling
+  const debounce = (func: Function, timeout = 100) => {
+    let timer: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+  };
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const handleScroll = () => {
-      const containerWidth = container.offsetWidth;
-      const scrollPosition = container.scrollLeft + containerWidth / 2;
+    const handleScroll = debounce(() => {
+      const containerCenter = container.offsetWidth / 2;
+      const cards = Array.from(container.querySelectorAll('.music-card'));
 
-      const cards = Array.from(document.querySelectorAll('.music-card'));
-      const centered = cards.find(card => {
+      let closestCardId: number | null = null;
+      let closestDistance = Infinity;
+
+      cards.forEach((card) => {
         const rect = card.getBoundingClientRect();
-        const cardCenter = rect.left - container.getBoundingClientRect().left + rect.width / 2;
-        return Math.abs(cardCenter - containerWidth / 2) < 30;
+        const cardCenter = rect.left + rect.width / 2;
+        const distance = Math.abs(containerCenter - cardCenter);
+
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestCardId = Number(card.getAttribute('data-id'));
+        }
       });
 
-      if (centered) {
-        const cardId = Number(centered.getAttribute('data-id'));
-        setCenteredCard(cardId);
+      if (closestCardId !== centeredCard) {
+        setCenteredCard(closestCardId);
       }
-    };
+    });
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [centeredCard]);
 
   const handleSearch = (query: string) => {
     const filtered = musicItems.filter(item =>
@@ -88,6 +105,7 @@ const Musics: React.FC = () => {
     setFilteredMusicItems(musicItems);
   }, [musicItems]);
 
+  // Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     setStartX(e.pageX - (containerRef.current?.offsetLeft || 0));
@@ -120,54 +138,12 @@ const Musics: React.FC = () => {
     containerRef.current.scrollLeft = scrollLeft - walk;
   };
 
-  const togglePlay = (id: number) => {
-    if (isDragging) return;
-
-    setMusicItems(prevItems =>
-      prevItems.map(item => {
-        if (item.id === id) {
-          const audioRef = audioRefs[id - 1].current;
-          if (!item.isPlaying) {
-            prevItems.forEach((otherItem, index) => {
-              if (otherItem.id !== id && audioRefs[index].current) {
-                audioRefs[index].current?.pause();
-                audioRefs[index].current!.currentTime = 0;
-              }
-            });
-            audioRef?.play().catch(error =>
-              console.error('Audio playback failed:', error)
-            );
-          } else {
-            audioRef?.pause();
-          }
-          return { ...item, isPlaying: !item.isPlaying };
-        }
-        return { ...item, isPlaying: false };
-      })
-    );
-
-    const cardElement = document.querySelector(`.music-card[data-id="${id}"]`);
-    if (cardElement && containerRef.current) {
-      const container = containerRef.current;
-      const containerWidth = container.offsetWidth;
-      const cardRect = cardElement.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-
-      const scrollTo = cardRect.left - containerRect.left + container.scrollLeft - (containerWidth / 2) + (cardRect.width / 2);
-
-      container.scrollTo({
-        left: scrollTo,
-        behavior: 'smooth'
-      });
-    }
-  };
-
   const restartMusic = (id: number) => {
     const audioRef = audioRefs[id - 1].current;
     if (audioRef) {
       audioRef.currentTime = 0;
       if (musicItems.find(item => item.id === id)?.isPlaying) {
-        audioRef.play().catch(error => console.error('Audio playback failed:', error));
+        audioRef.play().catch(console.error);
       }
     }
   };
@@ -180,60 +156,65 @@ const Musics: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent fullscreen className="music-page-container">
-  {/* Search Bar */}
-  <div className="search-container">
-    <ModelSearch onSearch={handleSearch} />
-  </div>
+      <IonContent fullscreen>
+        <ModelSearch onSearch={handleSearch} />
 
-  {/* Horizontal Scrolling Cards (Original Behavior) */}
-  <div
-    className="music-container"
-    ref={containerRef}
-    onMouseDown={handleMouseDown}
-    onMouseMove={handleMouseMove}
-    onMouseUp={handleMouseUp}
-    onMouseLeave={handleMouseUp}
-    onTouchStart={handleTouchStart}
-    onTouchMove={handleTouchMove}
-    onTouchEnd={handleMouseUp}
-  >
-    <div className="music-grid">
-      <div className="music-row">
-        {filteredMusicItems.map((item) => (
-          <div key={item.id} className="music-col">
-            <div
-              className={`music-card ${centeredCard === item.id ? 'snap-center' : ''} ${item.isPlaying ? 'playing' : ''}`}
-              onClick={() => togglePlay(item.id)}
-            >
-              <img src={MusicImage} className="music-image" alt={item.title} />
-              <IonCardHeader>
-                <IonCardTitle>{item.title}</IonCardTitle>
-              </IonCardHeader>
+        <div
+          className={`music-container ${isDragging ? 'grabbing' : ''}`}
+          ref={containerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleMouseUp}
+        >
+          <div className="music-scroll-row">
+            {/* Empty spacer for initial centering */}
+            <div style={{ minWidth: 'calc(50vw - 40%)' }} />
+
+            {filteredMusicItems.map((item, index) => (
+              <div key={item.id} className="music-col">
+                <IonCard
+                  className={`music-card ${centeredCard === item.id ? 'snap-center' : ''}`}
+                  data-id={item.id}
+                >
+                  <img
+                    src={MusicImage}
+                    className="music-image"
+                    alt={item.title}
+                  />
+                  <IonCardHeader>
+                    <IonCardTitle>{item.title}</IonCardTitle>
+                  </IonCardHeader>
+                  <audio ref={audioRefs[index]} src={item.audioSrc} />
+                </IonCard>
+              </div>
+            ))}
+
+            {/* Empty spacer for final centering */}
+            <div style={{ minWidth: 'calc(50vw - 40%)' }} />
+          </div>
+        </div>
+
+        {/* Slimmer Player Card */}
+        <IonCard className="music-player-card">
+          <div className="ion-padding">
+            <div className="player-controls">
+              <MusicPassBackward />
+              <MusicRestartButton />
+              <MusicPlayButton />
+              <MusicPassforward />
+              <MusicRepeatButton />
+            </div>
+            <div className="player-bottom-row">
+              <MusicPlayAll />
+              <MusicSpectrum />
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  </div>
-
-  {/* Player Controls (Fixed Below) */}
-  <IonCard className="music-player-card">
-    <IonGrid>
-      <IonRow className="ion-justify-content-center ion-align-items-center ion-padding">
-        <IonCol size="2"><MusicPassBackward /></IonCol>
-        <IonCol size="2"><MusicRestartButton /></IonCol>
-        <IonCol size="2"><MusicPlayButton /></IonCol>
-        <IonCol size="2"><MusicPassforward /></IonCol>
-        <IonCol size="2"><MusicRepeatButton /></IonCol>
-      </IonRow>
-      <IonRow className="ion-justify-content-center ion-padding-top">
-        <IonCol size="6"><MusicPlayAll /></IonCol>
-        <IonCol size="6"><MusicSpectrum /></IonCol>
-      </IonRow>
-    </IonGrid>
-  </IonCard>
-</IonContent>
+        </IonCard>
+      </IonContent>
     </IonPage>
   );
 };
