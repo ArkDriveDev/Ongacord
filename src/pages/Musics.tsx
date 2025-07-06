@@ -201,6 +201,7 @@ const Musics: React.FC = () => {
         {/* Slimmer Player Card */}
         <IonCard className="music-player-card">
           <div className="ion-padding">
+            <MusicSpectrum />
             <div className="player-controls">
               <MusicPassBackward />
               <MusicRestartButton />
@@ -210,7 +211,6 @@ const Musics: React.FC = () => {
             </div>
             <div className="player-bottom-row">
               <MusicPlayAll />
-              <MusicSpectrum />
             </div>
           </div>
         </IonCard>

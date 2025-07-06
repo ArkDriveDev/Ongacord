@@ -110,7 +110,8 @@
 .music-player-card {
   max-width: 25%; /* Instead of full width */
   margin: 0 auto; /* Center horizontally */
-  margin-top: 2%;
+  margin-top: 1%;
+  margin-bottom: 2%;
   border-radius: 16px;
   padding: 8px;
   background: linear-gradient(145deg, #2d2d42, #1e1e2d);
@@ -128,7 +129,7 @@
 /* Bottom Row - More Compact */
 .player-bottom-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   padding: 4px 8px; /* Less side padding */
 }
 
