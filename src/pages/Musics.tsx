@@ -2,10 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
   IonCard, IonCardHeader, IonCardTitle, IonCardContent,
-  IonButton, IonIcon, IonRow, IonCol, IonGrid 
+  IonRow, IonCol, IonGrid 
 } from '@ionic/react';
-import { play, pause } from 'ionicons/icons';
-import './Musics.css';
 
 // Import audio files
 import Music1 from '../Musics/Bumble bee.mp3';
@@ -16,6 +14,7 @@ import Music4 from '../Musics/See tin.mp3';
 // Import default music image
 import MusicImage from '../images/Music.png';
 import ModelSearch from '../components/ModelsProps/ModelSearch';
+import MusicPlayButton from '../components/MusicsProps/MusicPlayButton';
 
 interface MusicItem {
   id: number;
@@ -157,6 +156,16 @@ const Musics: React.FC = () => {
     }
   };
 
+  const restartMusic = (id: number) => {
+    const audioRef = audioRefs[id-1].current;
+    if (audioRef) {
+      audioRef.currentTime = 0;
+      if (musicItems.find(item => item.id === id)?.isPlaying) {
+        audioRef.play().catch(error => console.error('Audio playback failed:', error));
+      }
+    }
+  };
+
   return (
     <IonPage>
       <IonHeader>
@@ -203,18 +212,11 @@ const Musics: React.FC = () => {
                       <IonCardTitle>{item.title}</IonCardTitle>
                     </IonCardHeader>
                     <IonCardContent>
-                      <IonButton 
-                        expand="block" 
-                        onClick={() => togglePlay(item.id)}
-                        color={item.isPlaying ? 'danger' : 'success'}
-                        className="play-button"
-                      >
-                        <IonIcon 
-                          slot="start" 
-                          icon={item.isPlaying ? pause : play} 
-                        />
-                        {item.isPlaying ? 'Pause' : 'Play'}
-                      </IonButton>
+                      <MusicPlayButton
+                        isPlaying={item.isPlaying}
+                        onToggle={() => togglePlay(item.id)}
+                        onRestart={() => restartMusic(item.id)}
+                      />
                       <audio
                         ref={audioRefs[index]}
                         src={item.audioSrc}

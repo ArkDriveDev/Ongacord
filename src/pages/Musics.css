@@ -127,3 +127,25 @@
   flex-direction: column;
   justify-content: flex-end;
 }
+.music-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.play-button {
+  flex: 1;
+}
+
+.restart-button {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --background: transparent;
+  --background-hover: rgba(var(--ion-color-primary-rgb), 0.1);
+  --background-activated: rgba(var(--ion-color-primary-rgb), 0.2);
+}
+
+.music-card.playing .restart-button {
+  --color: var(--ion-color-danger);
+}
