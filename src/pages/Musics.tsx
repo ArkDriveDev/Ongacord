@@ -14,7 +14,6 @@ import Music4 from '../Musics/See tin.mp3';
 // Import default music image
 import MusicImage from '../images/Music.png';
 import ModelSearch from '../components/ModelsProps/ModelSearch';
-import MusicPlayButton from '../components/MusicsProps/MusicPlayButton';
 
 interface MusicItem {
   id: number;
@@ -211,19 +210,6 @@ const Musics: React.FC = () => {
                     <IonCardHeader>
                       <IonCardTitle>{item.title}</IonCardTitle>
                     </IonCardHeader>
-                    <IonCardContent>
-                      <MusicPlayButton
-                        isPlaying={item.isPlaying}
-                        onToggle={() => togglePlay(item.id)}
-                        onRestart={() => restartMusic(item.id)}
-                      />
-                      <audio
-                        ref={audioRefs[index]}
-                        src={item.audioSrc}
-                        onEnded={() => togglePlay(item.id)}
-                        onError={(e) => console.error('Audio error:', e)}
-                      />
-                    </IonCardContent>
                   </IonCard>
                 </IonCol>
               ))}

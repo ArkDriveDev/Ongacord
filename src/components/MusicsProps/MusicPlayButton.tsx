@@ -1,50 +1,14 @@
-import React from 'react';
 import { IonButton, IonIcon } from '@ionic/react';
-import { play, pause, refresh } from 'ionicons/icons';
+import { play, pause } from 'ionicons/icons';
+import { useState } from 'react';
 
-interface MusicPlayButtonProps {
-  isPlaying: boolean;
-  onToggle: () => void;
-  onRestart: () => void;
-  disabled?: boolean;
-  className?: string;
-}
+const MusicPlayButton: React.FC = () => {
+  const [isPlaying, setIsPlaying] = useState(false);
 
-const MusicPlayButton: React.FC<MusicPlayButtonProps> = ({ 
-  isPlaying, 
-  onToggle,
-  onRestart,
-  disabled = false,
-  className = ''
-}) => {
   return (
-    <div className="music-controls">
-      <IonButton 
-        expand="block" 
-        onClick={onToggle}
-        color={isPlaying ? 'danger' : 'success'}
-        className={`play-button ${className}`}
-        disabled={disabled}
-      >
-        <IonIcon 
-          slot="start" 
-          icon={isPlaying ? pause : play} 
-        />
-        {isPlaying ? 'Pause' : 'Play'}
-      </IonButton>
-      
-      <IonButton 
-        fill="clear"
-        onClick={onRestart}
-        className="restart-button"
-        disabled={disabled}
-      >
-        <IonIcon 
-          icon={refresh} 
-          size="small"
-        />
-      </IonButton>
-    </div>
+    <IonButton onClick={() => setIsPlaying(!isPlaying)} color="primary" shape="round">
+      <IonIcon icon={isPlaying ? pause : play} />
+    </IonButton>
   );
 };
 
