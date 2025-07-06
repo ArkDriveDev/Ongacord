@@ -169,11 +169,19 @@ const Musics: React.FC = () => {
 
   // Search functionality
   const handleSearch = (query: string) => {
-    const filtered = musicItems.filter(item =>
-      item.title.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredMusicItems(filtered);
-  };
+  const filtered = musicItems.filter(item =>
+    item.title.toLowerCase().includes(query.toLowerCase())
+  );
+  setFilteredMusicItems(filtered);
+  
+  // If current playing song is not in filtered results, stop playback
+  if (currentPlayingId && !filtered.some(item => item.id === currentPlayingId)) {
+    audioRefs[currentPlayingId as keyof typeof audioRefs].current?.pause();
+    setCurrentPlayingId(null);
+    setIsPlaying(false);
+    setCurrentProgress(0);
+  }
+};
 
   // Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
