@@ -31,7 +31,7 @@ interface MusicItem {
 }
 
 const Musics: React.FC = () => {
-  // Create audio refs based on original music items
+  // Original music items
   const musicItems = [
     { id: 1, title: 'Bumble Bee', audioSrc: Music1 },
     { id: 2, title: 'Chicken Dance', audioSrc: Music2 },
@@ -39,11 +39,19 @@ const Musics: React.FC = () => {
     { id: 4, title: 'See Tinh', audioSrc: Music4 },
   ];
 
-  // Create refs for each audio element
-  const audioRefs = musicItems.reduce((refs, item) => {
-    refs[item.id] = useRef<HTMLAudioElement>(null);
-    return refs;
-  }, {} as Record<number, React.RefObject<HTMLAudioElement>>);
+  // Initialize audio refs for each music item
+  const audioRef1 = useRef<HTMLAudioElement>(null);
+  const audioRef2 = useRef<HTMLAudioElement>(null);
+  const audioRef3 = useRef<HTMLAudioElement>(null);
+  const audioRef4 = useRef<HTMLAudioElement>(null);
+
+  // Create a map of audio refs by ID
+  const audioRefs = {
+    1: audioRef1,
+    2: audioRef2,
+    3: audioRef3,
+    4: audioRef4,
+  };
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [centeredCard, setCenteredCard] = useState<number | null>(1);
@@ -57,7 +65,7 @@ const Musics: React.FC = () => {
 
   // Update progress while audio plays
   useEffect(() => {
-    const audio = currentPlayingId ? audioRefs[currentPlayingId].current : null;
+    const audio = currentPlayingId ? audioRefs[currentPlayingId as keyof typeof audioRefs].current : null;
     if (!audio) return;
 
     const updateProgress = () => {
@@ -72,7 +80,7 @@ const Musics: React.FC = () => {
 
   // Handle play/pause
   const handlePlayPause = (id: number) => {
-    const audioRef = audioRefs[id]?.current;
+    const audioRef = audioRefs[id as keyof typeof audioRefs].current;
     if (!audioRef) return;
 
     if (currentPlayingId === id) {
@@ -85,7 +93,7 @@ const Musics: React.FC = () => {
     } else {
       // Pause currently playing audio if any
       if (currentPlayingId) {
-        audioRefs[currentPlayingId].current?.pause();
+        audioRefs[currentPlayingId as keyof typeof audioRefs].current?.pause();
       }
       // Play new audio
       audioRef.currentTime = 0;
@@ -266,7 +274,10 @@ const Musics: React.FC = () => {
                   <IonCardHeader>
                     <IonCardTitle>{item.title}</IonCardTitle>
                   </IonCardHeader>
-                  <audio ref={audioRefs[item.id]} src={item.audioSrc} />
+                  <audio 
+                    ref={audioRefs[item.id as keyof typeof audioRefs]} 
+                    src={item.audioSrc} 
+                  />
                 </IonCard>
               </div>
             ))}
@@ -281,7 +292,7 @@ const Musics: React.FC = () => {
             <MusicSpectrum
               progress={currentProgress}
               onSeek={(newProgress) => {
-                const audio = currentPlayingId ? audioRefs[currentPlayingId].current : null;
+                const audio = currentPlayingId ? audioRefs[currentPlayingId as keyof typeof audioRefs].current : null;
                 if (audio) {
                   audio.currentTime = (newProgress / 100) * audio.duration;
                 }
