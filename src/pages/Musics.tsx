@@ -15,6 +15,7 @@ import Music4 from '../Musics/See tin.mp3';
 
 // Import default music image
 import MusicImage from '../images/Music.png';
+import ModelSearch from '../components/ModelsProps/ModelSearch';
 
 interface MusicItem {
   id: number;
@@ -44,6 +45,8 @@ const Musics: React.FC = () => {
     { id: 4, title: 'See Tinh', audioSrc: Music4, isPlaying: false },
   ]);
 
+  const [filteredMusicItems, setFilteredMusicItems] = useState<MusicItem[]>(musicItems);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -68,6 +71,17 @@ const Musics: React.FC = () => {
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleSearch = (query: string) => {
+    const filtered = musicItems.filter(item =>
+      item.title.toLowerCase().includes(query.toLowerCase())
+    );
+    setFilteredMusicItems(filtered);
+  };
+
+  useEffect(() => {
+    setFilteredMusicItems(musicItems);
+  }, [musicItems]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -102,7 +116,6 @@ const Musics: React.FC = () => {
   };
 
   const togglePlay = (id: number) => {
-    // Prevent play/pause during drag
     if (isDragging) return;
 
     setMusicItems(prevItems => 
@@ -110,19 +123,16 @@ const Musics: React.FC = () => {
         if (item.id === id) {
           const audioRef = audioRefs[id-1].current;
           if (!item.isPlaying) {
-            // Stop all other tracks
             prevItems.forEach((otherItem, index) => {
               if (otherItem.id !== id && audioRefs[index].current) {
                 audioRefs[index].current?.pause();
                 audioRefs[index].current!.currentTime = 0;
               }
             });
-            // Play this track
             audioRef?.play().catch(error => 
               console.error('Audio playback failed:', error)
             );
           } else {
-            // Pause this track
             audioRef?.pause();
           }
           return { ...item, isPlaying: !item.isPlaying };
@@ -131,7 +141,6 @@ const Musics: React.FC = () => {
       })
     );
 
-    // Scroll to center the selected card
     const cardElement = document.querySelector(`.music-card[data-id="${id}"]`);
     if (cardElement && containerRef.current) {
       const container = containerRef.current;
@@ -148,19 +157,6 @@ const Musics: React.FC = () => {
     }
   };
 
-   const [filteredMusicItems, setFilteredMusicItems] = useState<MusicItem[]>(musicItems);
-
-  const handleSearch = (query: string) => {
-    const filtered = musicItems.filter(item =>
-      item.title.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredMusicItems(filtered);
-  };
-
-  useEffect(() => {
-    setFilteredMusicItems(musicItems);
-  }, [musicItems]);
-
   return (
     <IonPage>
       <IonHeader>
@@ -170,6 +166,8 @@ const Musics: React.FC = () => {
       </IonHeader>
       
       <IonContent fullscreen>
+        <ModelSearch onSearch={handleSearch} />
+        
         <div 
           className="music-container" 
           ref={containerRef}
@@ -184,7 +182,7 @@ const Musics: React.FC = () => {
         >
           <IonGrid className="music-grid">
             <IonRow className="music-row">
-              {musicItems.map((item, index) => (
+              {filteredMusicItems.map((item, index) => (
                 <IonCol key={item.id} className="music-col">
                   <IonCard 
                     className={`music-card ${centeredCard === item.id ? 'snap-center' : ''} ${item.isPlaying ? 'playing' : ''}`}

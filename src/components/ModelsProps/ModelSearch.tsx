@@ -19,7 +19,7 @@ const ModelSearch: React.FC<ModelSearchProps> = ({ onSearch }) => {
       style={{ width: '75%', marginTop: '30px', display: 'block' }}
       value={query}
       onIonInput={handleInput}
-      placeholder="Search Model..."
+      placeholder="Search..."
       debounce={300}
     />
   );
