@@ -209,26 +209,36 @@ const Musics: React.FC = () => {
   };
 
   // Handle card clicks
-  const handleCardClick = (id: number) => {
-    const container = containerRef.current;
-    if (!container) return;
+ const handleCardClick = (id: number) => {
+  const container = containerRef.current;
+  if (!container) return;
 
-    const card = container.querySelector(`.music-card[data-id="${id}"]`);
-    if (!card) return;
+  const card = container.querySelector(`.music-card[data-id="${id}"]`);
+  if (!card) return;
 
-    const containerWidth = container.offsetWidth;
-    const cardRect = card.getBoundingClientRect();
-    const cardLeft = cardRect.left + container.scrollLeft;
-    const cardWidth = cardRect.width;
-    const scrollTo = cardLeft - (containerWidth / 2) + (cardWidth / 2);
+  // Pause currently playing audio if any
+  if (currentPlayingId) {
+    const currentAudio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
+    if (currentAudio) {
+      currentAudio.pause();
+      setIsPlaying(false);
+      setCurrentProgress(0); // Reset progress
+    }
+  }
 
-    container.scrollTo({
-      left: scrollTo,
-      behavior: 'smooth'
-    });
+  const containerWidth = container.offsetWidth;
+  const cardRect = card.getBoundingClientRect();
+  const cardLeft = cardRect.left + container.scrollLeft;
+  const cardWidth = cardRect.width;
+  const scrollTo = cardLeft - (containerWidth / 2) + (cardWidth / 2);
 
-    setCenteredCard(id);
-  };
+  container.scrollTo({
+    left: scrollTo,
+    behavior: 'smooth'
+  });
+
+  setCenteredCard(id);
+};
 
   return (
     <IonPage>
