@@ -31,12 +31,19 @@ interface MusicItem {
 }
 
 const Musics: React.FC = () => {
-  const audioRefs = [
-    useRef<HTMLAudioElement>(null),
-    useRef<HTMLAudioElement>(null),
-    useRef<HTMLAudioElement>(null),
-    useRef<HTMLAudioElement>(null)
+  // Create audio refs based on original music items
+  const musicItems = [
+    { id: 1, title: 'Bumble Bee', audioSrc: Music1 },
+    { id: 2, title: 'Chicken Dance', audioSrc: Music2 },
+    { id: 3, title: 'Pretty Little Baby', audioSrc: Music3 },
+    { id: 4, title: 'See Tinh', audioSrc: Music4 },
   ];
+
+  // Create refs for each audio element
+  const audioRefs = musicItems.reduce((refs, item) => {
+    refs[item.id] = useRef<HTMLAudioElement>(null);
+    return refs;
+  }, {} as Record<number, React.RefObject<HTMLAudioElement>>);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [centeredCard, setCenteredCard] = useState<number | null>(1);
@@ -46,10 +53,11 @@ const Musics: React.FC = () => {
   const [currentPlayingId, setCurrentPlayingId] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
+  const [filteredMusicItems, setFilteredMusicItems] = useState<MusicItem[]>(musicItems);
 
-  // Add this effect to update progress while audio plays
+  // Update progress while audio plays
   useEffect(() => {
-    const audio = currentPlayingId ? audioRefs[currentPlayingId - 1].current : null;
+    const audio = currentPlayingId ? audioRefs[currentPlayingId].current : null;
     if (!audio) return;
 
     const updateProgress = () => {
@@ -62,65 +70,56 @@ const Musics: React.FC = () => {
     return () => audio.removeEventListener('timeupdate', updateProgress);
   }, [currentPlayingId]);
 
-  // Only MusicPlayButton functionality
- const handlePlayPause = (id: number) => {
-  // Find the index in filteredMusicItems
-  const filteredIndex = filteredMusicItems.findIndex(item => item.id === id);
-  if (filteredIndex === -1) return;
+  // Handle play/pause
+  const handlePlayPause = (id: number) => {
+    const audioRef = audioRefs[id]?.current;
+    if (!audioRef) return;
 
-  const audioRef = audioRefs[filteredMusicItems[filteredIndex].id - 1].current;
-  if (!audioRef) return;
-
-  if (currentPlayingId === id) {
-    if (isPlaying) {
-      audioRef.pause();
-    } else {
-      audioRef.play().catch(error => console.error("Playback failed:", error));
-    }
-    setIsPlaying(!isPlaying);
-  } else {
-    // Pause currently playing audio if any
-    if (currentPlayingId) {
-      const currentIndex = filteredMusicItems.findIndex(item => item.id === currentPlayingId);
-      if (currentIndex !== -1) {
-        audioRefs[filteredMusicItems[currentIndex].id - 1].current?.pause();
+    if (currentPlayingId === id) {
+      if (isPlaying) {
+        audioRef.pause();
+      } else {
+        audioRef.play().catch(error => console.error("Playback failed:", error));
       }
+      setIsPlaying(!isPlaying);
+    } else {
+      // Pause currently playing audio if any
+      if (currentPlayingId) {
+        audioRefs[currentPlayingId].current?.pause();
+      }
+      // Play new audio
+      audioRef.currentTime = 0;
+      audioRef.play().catch(error => console.error("Playback failed:", error));
+      setCurrentPlayingId(id);
+      setIsPlaying(true);
     }
-    // Play new audio
-    audioRef.currentTime = 0;
-    audioRef.play().catch(error => console.error("Playback failed:", error));
-    setCurrentPlayingId(id);
-    setIsPlaying(true);
-  }
-};
+  };
+
   // Handle audio ending
   useEffect(() => {
-    audioRefs.forEach((ref, index) => {
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentPlayingId(null);
+    };
+
+    Object.values(audioRefs).forEach(ref => {
       const audio = ref.current;
-      if (!audio) return;
-
-      const handleEnded = () => {
-        if (currentPlayingId === index + 1) {
-          setIsPlaying(false);
-          setCurrentPlayingId(null);
-        }
-      };
-
-      audio.addEventListener('ended', handleEnded);
-      return () => audio.removeEventListener('ended', handleEnded);
+      if (audio) {
+        audio.addEventListener('ended', handleEnded);
+      }
     });
-  }, [currentPlayingId]);
 
-  const [musicItems] = useState<MusicItem[]>([
-    { id: 1, title: 'Bumble Bee', audioSrc: Music1 },
-    { id: 2, title: 'Chicken Dance', audioSrc: Music2 },
-    { id: 3, title: 'Pretty Little Baby', audioSrc: Music3 },
-    { id: 4, title: 'See Tinh', audioSrc: Music4 },
-  ]);
+    return () => {
+      Object.values(audioRefs).forEach(ref => {
+        const audio = ref.current;
+        if (audio) {
+          audio.removeEventListener('ended', handleEnded);
+        }
+      });
+    };
+  }, []);
 
-  const [filteredMusicItems, setFilteredMusicItems] = useState<MusicItem[]>(musicItems);
-
-  // All your original scroll/drag/search functions remain unchanged
+  // Scroll handling
   const debounce = (func: Function, timeout = 100) => {
     let timer: NodeJS.Timeout;
     return (...args: any[]) => {
@@ -160,6 +159,7 @@ const Musics: React.FC = () => {
     return () => container.removeEventListener('scroll', handleScroll);
   }, [centeredCard]);
 
+  // Search functionality
   const handleSearch = (query: string) => {
     const filtered = musicItems.filter(item =>
       item.title.toLowerCase().includes(query.toLowerCase())
@@ -167,7 +167,7 @@ const Musics: React.FC = () => {
     setFilteredMusicItems(filtered);
   };
 
-  // Original drag handlers (unchanged)
+  // Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     setStartX(e.pageX - (containerRef.current?.offsetLeft || 0));
@@ -199,58 +199,29 @@ const Musics: React.FC = () => {
     const walk = (x - startX) * 2;
     containerRef.current.scrollLeft = scrollLeft - walk;
   };
-  // Add this new function to handle card clicks
+
+  // Handle card clicks
   const handleCardClick = (id: number) => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Find the card element
     const card = container.querySelector(`.music-card[data-id="${id}"]`);
     if (!card) return;
 
-    // Calculate scroll position to center the card
     const containerWidth = container.offsetWidth;
     const cardRect = card.getBoundingClientRect();
     const cardLeft = cardRect.left + container.scrollLeft;
     const cardWidth = cardRect.width;
     const scrollTo = cardLeft - (containerWidth / 2) + (cardWidth / 2);
 
-    // Smooth scroll to center the card
     container.scrollTo({
       left: scrollTo,
       behavior: 'smooth'
     });
 
-    // Update the centered card state
     setCenteredCard(id);
   };
 
-  // Modify your card rendering to add onClick:
-  {
-    filteredMusicItems.map((item, index) => (
-      <div
-        key={item.id}
-        className="music-col"
-        onClick={() => handleCardClick(item.id)} // Add this
-        style={{ cursor: 'pointer' }} // Add pointer cursor
-      >
-        <IonCard
-          className={`music-card ${centeredCard === item.id ? 'snap-center' : ''}`}
-          data-id={item.id}
-        >
-          <img
-            src={MusicImage}
-            className="music-image"
-            alt={item.title}
-          />
-          <IonCardHeader>
-            <IonCardTitle>{item.title}</IonCardTitle>
-          </IonCardHeader>
-          <audio ref={audioRefs[index]} src={item.audioSrc} />
-        </IonCard>
-      </div>
-    ))
-  }
   return (
     <IonPage>
       <IonHeader>
@@ -276,7 +247,7 @@ const Musics: React.FC = () => {
           <div className="music-scroll-row">
             <div style={{ minWidth: 'calc(50vw - 40%)' }} />
 
-            {filteredMusicItems.map((item, index) => (
+            {filteredMusicItems.map((item) => (
               <div
                 key={item.id}
                 className="music-col"
@@ -295,7 +266,7 @@ const Musics: React.FC = () => {
                   <IonCardHeader>
                     <IonCardTitle>{item.title}</IonCardTitle>
                   </IonCardHeader>
-                  <audio ref={audioRefs[index]} src={item.audioSrc} />
+                  <audio ref={audioRefs[item.id]} src={item.audioSrc} />
                 </IonCard>
               </div>
             ))}
@@ -310,7 +281,7 @@ const Musics: React.FC = () => {
             <MusicSpectrum
               progress={currentProgress}
               onSeek={(newProgress) => {
-                const audio = currentPlayingId ? audioRefs[currentPlayingId - 1].current : null;
+                const audio = currentPlayingId ? audioRefs[currentPlayingId].current : null;
                 if (audio) {
                   audio.currentTime = (newProgress / 100) * audio.duration;
                 }
