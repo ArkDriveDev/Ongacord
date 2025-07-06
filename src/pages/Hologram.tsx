@@ -34,20 +34,21 @@ const Hologram: React.FC = () => {
   const [isResponding, setIsResponding] = useState(false);
   const [isReversed, setIsReversed] = useState(false);
   const [isModelChanging, setIsModelChanging] = useState(false);
-  
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const responseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const modelChangeTimeout = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Audio refs
   const wanyaSound = useRef(new Audio(wanya)).current;
   const successSound = useRef(new Audio(success)).current;
+
 
   useEffect(() => {
     // Initialize audio elements
     wanyaSound.load();
     successSound.load();
-    
+
     // Set up aria-hidden observer
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
@@ -67,12 +68,24 @@ const Hologram: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setSelectedModel(location.state?.model || DEFAULT_MODEL);
+    const fromRoute = location.state?.model;
+    if (fromRoute) {
+      setSelectedModel(fromRoute);
+      localStorage.setItem('selectedModel', JSON.stringify(fromRoute));
+    } else {
+      const saved = localStorage.getItem('selectedModel');
+      if (saved) {
+        setSelectedModel(JSON.parse(saved));
+      } else {
+        setSelectedModel(DEFAULT_MODEL);
+      }
+    }
   }, [location.state]);
+
 
   const playHelloSound = () => {
     if (!audioRef.current) return;
-    
+
     VoiceService.setSystemAudioState(true);
     setIsResponding(true);
 
@@ -93,57 +106,57 @@ const Hologram: React.FC = () => {
     wanyaSound.play().catch(e => console.error("Failed to play audio:", e));
   };
 
- const handleModelChange = useCallback(async (modelName: string | HologramModel | null) => {
-  if (!modelName) {
-    setIsModelChanging(false);
-    return;
-  }
-
-  try {
-    setIsModelChanging(true);
-    VoiceService.setSystemAudioState(true); // Pause recognition
-      
-    // If it's already a model object (from click)
-    if (typeof modelName !== 'string') {
-      setSelectedModel(modelName);
-      await new Promise<void>((resolve) => {
-        successSound.onended = () => resolve();
-        successSound.onerror = () => resolve();
-        successSound.play().catch(e => {
-          console.error("Failed to play audio:", e);
-          resolve();
-        });
-      });
+  const handleModelChange = useCallback(async (modelName: string | HologramModel | null) => {
+    if (!modelName) {
+      setIsModelChanging(false);
       return;
     }
 
-    // If it's a string (from voice command)
-    const models = await fetchAvailableModels();
-    const normalizedInput = modelName.toLowerCase().trim();
+    try {
+      setIsModelChanging(true);
+      VoiceService.setSystemAudioState(true); // Pause recognition
 
-    const model = models.find(m =>
-      m.name.toLowerCase() === normalizedInput ||
-      m.name.toLowerCase().includes(normalizedInput)
-    );
-
-    if (model) {
-      setSelectedModel(model);
-      await new Promise<void>((resolve) => {
-        successSound.onended = () => resolve();
-        successSound.onerror = () => resolve();
-        successSound.play().catch(e => {
-          console.error("Failed to play audio:", e);
-          resolve();
+      // If it's already a model object (from click)
+      if (typeof modelName !== 'string') {
+        setSelectedModel(modelName);
+        await new Promise<void>((resolve) => {
+          successSound.onended = () => resolve();
+          successSound.onerror = () => resolve();
+          successSound.play().catch(e => {
+            console.error("Failed to play audio:", e);
+            resolve();
+          });
         });
-      });
+        return;
+      }
+
+      // If it's a string (from voice command)
+      const models = await fetchAvailableModels();
+      const normalizedInput = modelName.toLowerCase().trim();
+
+      const model = models.find(m =>
+        m.name.toLowerCase() === normalizedInput ||
+        m.name.toLowerCase().includes(normalizedInput)
+      );
+
+      if (model) {
+        setSelectedModel(model);
+        await new Promise<void>((resolve) => {
+          successSound.onended = () => resolve();
+          successSound.onerror = () => resolve();
+          successSound.play().catch(e => {
+            console.error("Failed to play audio:", e);
+            resolve();
+          });
+        });
+      }
+    } catch (error) {
+      console.error("Model change error:", error);
+    } finally {
+      VoiceService.setSystemAudioState(false); // Resume recognition
+      setIsModelChanging(false);
     }
-  } catch (error) {
-    console.error("Model change error:", error);
-  } finally {
-    VoiceService.setSystemAudioState(false); // Resume recognition
-    setIsModelChanging(false);
-  }
-}, []);
+  }, []);
 
   const handleVoiceCommand = useCallback(async (command: string) => {
     try {
@@ -198,10 +211,10 @@ const Hologram: React.FC = () => {
     VoiceService.stopListening();
     setIsVoiceActive(false);
     setIsResponding(false);
-    
+
     audioRef.current?.pause();
     audioRef.current = null;
-    
+
     clearTimeout(responseTimeoutRef.current as NodeJS.Timeout);
     clearTimeout(modelChangeTimeout.current as NodeJS.Timeout);
   });
