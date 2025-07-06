@@ -177,7 +177,58 @@ const Musics: React.FC = () => {
     const walk = (x - startX) * 2;
     containerRef.current.scrollLeft = scrollLeft - walk;
   };
+  // Add this new function to handle card clicks
+  const handleCardClick = (id: number) => {
+    const container = containerRef.current;
+    if (!container) return;
 
+    // Find the card element
+    const card = container.querySelector(`.music-card[data-id="${id}"]`);
+    if (!card) return;
+
+    // Calculate scroll position to center the card
+    const containerWidth = container.offsetWidth;
+    const cardRect = card.getBoundingClientRect();
+    const cardLeft = cardRect.left + container.scrollLeft;
+    const cardWidth = cardRect.width;
+    const scrollTo = cardLeft - (containerWidth / 2) + (cardWidth / 2);
+
+    // Smooth scroll to center the card
+    container.scrollTo({
+      left: scrollTo,
+      behavior: 'smooth'
+    });
+
+    // Update the centered card state
+    setCenteredCard(id);
+  };
+
+  // Modify your card rendering to add onClick:
+  {
+    filteredMusicItems.map((item, index) => (
+      <div
+        key={item.id}
+        className="music-col"
+        onClick={() => handleCardClick(item.id)} // Add this
+        style={{ cursor: 'pointer' }} // Add pointer cursor
+      >
+        <IonCard
+          className={`music-card ${centeredCard === item.id ? 'snap-center' : ''}`}
+          data-id={item.id}
+        >
+          <img
+            src={MusicImage}
+            className="music-image"
+            alt={item.title}
+          />
+          <IonCardHeader>
+            <IonCardTitle>{item.title}</IonCardTitle>
+          </IonCardHeader>
+          <audio ref={audioRefs[index]} src={item.audioSrc} />
+        </IonCard>
+      </div>
+    ))
+  }
   return (
     <IonPage>
       <IonHeader>
@@ -204,7 +255,12 @@ const Musics: React.FC = () => {
             <div style={{ minWidth: 'calc(50vw - 40%)' }} />
 
             {filteredMusicItems.map((item, index) => (
-              <div key={item.id} className="music-col">
+              <div
+                key={item.id}
+                className="music-col"
+                onClick={() => handleCardClick(item.id)}
+                style={{ cursor: 'pointer' }}
+              >
                 <IonCard
                   className={`music-card ${centeredCard === item.id ? 'snap-center' : ''}`}
                   data-id={item.id}
@@ -226,7 +282,7 @@ const Musics: React.FC = () => {
           </div>
         </div>
 
-        {/* Player Card - Only MusicPlayButton is functional */}
+        {/* Player Card */}
         <IonCard className="music-player-card">
           <div className="ion-padding">
             <MusicSpectrum />
