@@ -1,12 +1,24 @@
 import { IonButton, IonIcon } from '@ionic/react';
 import { play, pause } from 'ionicons/icons';
-import { useState } from 'react';
 
-const MusicPlayButton: React.FC = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
+interface MusicPlayButtonProps {
+  isPlaying: boolean;
+  onPlayPause: () => void;
+  disabled?: boolean;  // Add this line
+}
 
+const MusicPlayButton: React.FC<MusicPlayButtonProps> = ({ 
+  isPlaying, 
+  onPlayPause,
+  disabled = false  // Add this with default value
+}) => {
   return (
-    <IonButton onClick={() => setIsPlaying(!isPlaying)} color="primary" shape="round">
+    <IonButton 
+      onClick={onPlayPause} 
+      color="primary" 
+      shape="round"
+      disabled={disabled}  // Add this
+    >
       <IonIcon icon={isPlaying ? pause : play} />
     </IonButton>
   );

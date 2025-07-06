@@ -28,7 +28,6 @@ interface MusicItem {
   id: number;
   title: string;
   audioSrc: string;
-  isPlaying: boolean;
 }
 
 const Musics: React.FC = () => {
@@ -44,17 +43,62 @@ const Musics: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [currentPlayingId, setCurrentPlayingId] = useState<number | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  const [musicItems, setMusicItems] = useState<MusicItem[]>([
-    { id: 1, title: 'Bumble Bee', audioSrc: Music1, isPlaying: false },
-    { id: 2, title: 'Chicken Dance', audioSrc: Music2, isPlaying: false },
-    { id: 3, title: 'Pretty Little Baby', audioSrc: Music3, isPlaying: false },
-    { id: 4, title: 'See Tinh', audioSrc: Music4, isPlaying: false },
+  // Only MusicPlayButton functionality
+  const handlePlayPause = (id: number) => {
+    const audioRef = audioRefs[id - 1].current;
+    if (!audioRef) return;
+
+    if (currentPlayingId === id) {
+      if (isPlaying) {
+        audioRef.pause();
+      } else {
+        audioRef.play().catch(error => console.error("Playback failed:", error));
+      }
+      setIsPlaying(!isPlaying);
+    } else {
+      // Pause currently playing audio if any
+      if (currentPlayingId) {
+        audioRefs[currentPlayingId - 1].current?.pause();
+      }
+      // Play new audio
+      audioRef.currentTime = 0;
+      audioRef.play().catch(error => console.error("Playback failed:", error));
+      setCurrentPlayingId(id);
+      setIsPlaying(true);
+    }
+  };
+
+  // Handle audio ending
+  useEffect(() => {
+    audioRefs.forEach((ref, index) => {
+      const audio = ref.current;
+      if (!audio) return;
+
+      const handleEnded = () => {
+        if (currentPlayingId === index + 1) {
+          setIsPlaying(false);
+          setCurrentPlayingId(null);
+        }
+      };
+
+      audio.addEventListener('ended', handleEnded);
+      return () => audio.removeEventListener('ended', handleEnded);
+    });
+  }, [currentPlayingId]);
+
+  const [musicItems] = useState<MusicItem[]>([
+    { id: 1, title: 'Bumble Bee', audioSrc: Music1 },
+    { id: 2, title: 'Chicken Dance', audioSrc: Music2 },
+    { id: 3, title: 'Pretty Little Baby', audioSrc: Music3 },
+    { id: 4, title: 'See Tinh', audioSrc: Music4 },
   ]);
 
   const [filteredMusicItems, setFilteredMusicItems] = useState<MusicItem[]>(musicItems);
 
-  // Debounce function for smoother scroll handling
+  // All your original scroll/drag/search functions remain unchanged
   const debounce = (func: Function, timeout = 100) => {
     let timer: NodeJS.Timeout;
     return (...args: any[]) => {
@@ -101,11 +145,7 @@ const Musics: React.FC = () => {
     setFilteredMusicItems(filtered);
   };
 
-  useEffect(() => {
-    setFilteredMusicItems(musicItems);
-  }, [musicItems]);
-
-  // Drag handlers
+  // Original drag handlers (unchanged)
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     setStartX(e.pageX - (containerRef.current?.offsetLeft || 0));
@@ -138,16 +178,6 @@ const Musics: React.FC = () => {
     containerRef.current.scrollLeft = scrollLeft - walk;
   };
 
-  const restartMusic = (id: number) => {
-    const audioRef = audioRefs[id - 1].current;
-    if (audioRef) {
-      audioRef.currentTime = 0;
-      if (musicItems.find(item => item.id === id)?.isPlaying) {
-        audioRef.play().catch(console.error);
-      }
-    }
-  };
-
   return (
     <IonPage>
       <IonHeader>
@@ -171,7 +201,6 @@ const Musics: React.FC = () => {
           onTouchEnd={handleMouseUp}
         >
           <div className="music-scroll-row">
-            {/* Empty spacer for initial centering */}
             <div style={{ minWidth: 'calc(50vw - 40%)' }} />
 
             {filteredMusicItems.map((item, index) => (
@@ -193,19 +222,22 @@ const Musics: React.FC = () => {
               </div>
             ))}
 
-            {/* Empty spacer for final centering */}
             <div style={{ minWidth: 'calc(50vw - 40%)' }} />
           </div>
         </div>
 
-        {/* Slimmer Player Card */}
+        {/* Player Card - Only MusicPlayButton is functional */}
         <IonCard className="music-player-card">
           <div className="ion-padding">
             <MusicSpectrum />
             <div className="player-controls">
               <MusicPassBackward />
               <MusicRestartButton />
-              <MusicPlayButton />
+              <MusicPlayButton
+                isPlaying={currentPlayingId !== null && isPlaying}
+                onPlayPause={() => centeredCard && handlePlayPause(centeredCard)}
+                disabled={!centeredCard}
+              />
               <MusicPassforward />
               <MusicRepeatButton />
             </div>
