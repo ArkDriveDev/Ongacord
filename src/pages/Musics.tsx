@@ -148,6 +148,19 @@ const Musics: React.FC = () => {
     }
   };
 
+   const [filteredMusicItems, setFilteredMusicItems] = useState<MusicItem[]>(musicItems);
+
+  const handleSearch = (query: string) => {
+    const filtered = musicItems.filter(item =>
+      item.title.toLowerCase().includes(query.toLowerCase())
+    );
+    setFilteredMusicItems(filtered);
+  };
+
+  useEffect(() => {
+    setFilteredMusicItems(musicItems);
+  }, [musicItems]);
+
   return (
     <IonPage>
       <IonHeader>
