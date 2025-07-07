@@ -1,9 +1,19 @@
 import { IonButton, IonIcon } from '@ionic/react';
 import { playSkipForward } from 'ionicons/icons';
 
-const MusicNext: React.FC = () => {
+interface MusicNextProps {
+  onClick: () => void;
+  disabled: boolean;
+}
+
+const MusicNext: React.FC<MusicNextProps> = ({ onClick, disabled }) => {
   return (
-    <IonButton color="secondary" shape="round">
+    <IonButton 
+      color="secondary" 
+      shape="round" 
+      onClick={onClick}
+      disabled={disabled}
+    >
       <IonIcon icon={playSkipForward} />
     </IonButton>
   );
