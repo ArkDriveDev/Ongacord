@@ -1,7 +1,7 @@
 import { IonButton, IonIcon } from '@ionic/react';
-import { repeat } from 'ionicons/icons';
+import { repeat, repeatOutline } from 'ionicons/icons';
 
-const MusicRepeatButton: React.FC = () => {
+const MusicRepeatToggle: React.FC = () => {
   return (
     <IonButton color="tertiary" shape="round">
       <IonIcon icon={repeat} />
@@ -9,4 +9,4 @@ const MusicRepeatButton: React.FC = () => {
   );
 };
 
-export default MusicRepeatButton;
+export default MusicRepeatToggle;

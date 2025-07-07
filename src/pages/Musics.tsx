@@ -17,11 +17,11 @@ import MusicImage from '../images/Music.png';
 // Components
 import ModelSearch from '../components/ModelsProps/ModelSearch';
 import MusicPlayButton from '../components/MusicsProps/MusicPlayButton';
-import MusicRepeatButton from '../components/MusicsProps/MusicRepeatButton';
 import MusicSpectrum from '../components/MusicsProps/MusicSpectrum';
 import MusicRestartButton from '../components/MusicsProps/MusicRestartButton';
 import MusicPrevious from '../components/MusicsProps/MusicPrevious';
 import MusicNext from '../components/MusicsProps/MusicNext';
+import MusicRepeatToggle from '../components/MusicsProps/MusicRepeatToggle';
 
 interface MusicItem {
   id: number;
@@ -414,7 +414,7 @@ const Musics: React.FC = () => {
                   filteredMusicItems.findIndex(item => item.id === centeredCard) >= filteredMusicItems.length - 1
                 }
               />
-              <MusicRepeatButton />
+              <MusicRepeatToggle/>
             </div>
           </div>
         </IonCard>
