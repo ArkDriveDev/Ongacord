@@ -312,6 +312,26 @@ const Musics: React.FC = () => {
     }
   };
 
+  const handleNext = () => {
+  if (!currentPlayingId || !centeredCard) return;
+
+  // Find the index of the currently playing song
+  const currentIndex = filteredMusicItems.findIndex(item => item.id === centeredCard);
+
+  // If there's a next song in the array
+  if (currentIndex < filteredMusicItems.length - 1) {
+    const nextId = filteredMusicItems[currentIndex + 1].id;
+
+    // Scroll to the next card
+    handleCardClick(nextId);
+
+    // Play the next song after a small delay to allow scrolling to complete
+    setTimeout(() => {
+      handlePlayPause(nextId);
+    }, 300);
+  }
+};
+
   return (
     <IonPage>
       <IonHeader>
