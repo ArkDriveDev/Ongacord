@@ -393,7 +393,15 @@ const Musics: React.FC = () => {
         {/* Player Card */}
         <IonCard className="music-player-card">
           <div className="ion-padding">
-              <SpectrumBars barCount={30} />
+            <SpectrumBars
+              barCount={30}
+              isPlaying={isPlaying}
+              audioElement={
+                currentPlayingId ?
+                  audioRefs[currentPlayingId as keyof typeof audioRefs].current :
+                  null
+              }
+            />
             <MusicSpectrum
               progress={currentProgress}
               onSeek={(newProgress) => {

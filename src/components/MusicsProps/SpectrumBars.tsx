@@ -4,17 +4,21 @@ import './SpectrumBars.css';
 interface SpectrumBarsProps {
   barCount?: number;
   isPlaying?: boolean;
-  audioRef?: React.RefObject<HTMLAudioElement>;
+  audioElement?: HTMLAudioElement | null;
 }
 
 const SpectrumBars: React.FC<SpectrumBarsProps> = ({ 
   barCount = 20, 
   isPlaying = false, 
-  audioRef 
+  audioElement 
 }) => {
-  // Create an array to hold all bar refs
   const barsRef = useRef<(HTMLDivElement | null)[]>([]);
-  
+  const animationFrameRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+
   // Initialize the array with null values
   useEffect(() => {
     barsRef.current = Array(barCount).fill(null);
@@ -25,14 +29,8 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
     barsRef.current[index] = el;
   }, []);
 
-  const animationFrameRef = useRef<number | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-
   useEffect(() => {
-    if (!isPlaying || !audioRef?.current) {
+    if (!isPlaying || !audioElement) {
       // Reset bars when not playing
       barsRef.current.forEach(bar => {
         if (bar) {
@@ -48,13 +46,11 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
 
     // Setup audio context and analyzer
     const setupAudioAnalysis = () => {
-      if (!audioRef?.current) return;
-
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 64;
+      analyser.fftSize = 256;  // Increased for better frequency resolution
       
-      const source = audioContext.createMediaElementSource(audioRef.current);
+      const source = audioContext.createMediaElementSource(audioElement);
       source.connect(analyser);
       analyser.connect(audioContext.destination);
       
@@ -67,7 +63,10 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
       dataArrayRef.current = dataArray;
     };
 
-    setupAudioAnalysis();
+    // Only set up if we haven't already
+    if (!audioContextRef.current) {
+      setupAudioAnalysis();
+    }
 
     // Animation loop
     const animate = () => {
@@ -79,14 +78,19 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
       
       const bars = barsRef.current;
       const dataArray = dataArrayRef.current;
+      const bufferLength = dataArray.length;
       
       for (let i = 0; i < bars.length; i++) {
         const bar = bars[i];
         if (bar) {
-          // Use different frequency bands for different bars
-          const value = dataArray[i % dataArray.length];
+          // Map bar index to frequency band
+          const bandIndex = Math.floor((i / bars.length) * bufferLength);
+          const value = dataArray[bandIndex];
+          // Apply some smoothing and scaling
           const height = `${10 + (value / 255) * 90}%`;
           bar.style.height = height;
+          // Optional: Add color variation based on intensity
+          bar.style.opacity = `${0.4 + (value / 255) * 0.6}`;
         }
       }
       
@@ -100,17 +104,10 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
-      if (sourceRef.current && audioContextRef.current) {
-        sourceRef.current.disconnect();
-      }
-      if (analyserRef.current && audioContextRef.current) {
-        analyserRef.current.disconnect();
-      }
-      if (audioContextRef.current?.state !== 'closed') {
-        audioContextRef.current?.close();
-      }
+      // Don't disconnect here - we want to keep the audio context alive
+      // between play/pause toggles
     };
-  }, [isPlaying, audioRef]);
+  }, [isPlaying, audioElement]);
 
   const bars = Array.from({ length: barCount });
 
@@ -122,7 +119,7 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
           ref={setBarRef(i)}
           className="spectrum-bar" 
           style={{ 
-            animation: isPlaying ? 'none' : `bounce 1s infinite ease-in-out ${i * 0.1}s`,
+            animation: isPlaying ? 'none' : `bounce 1s infinite ease-in-out ${i * 0.05}s`,
             background: 'linear-gradient(180deg, #320336, #ef05df)'
           }} 
         />
