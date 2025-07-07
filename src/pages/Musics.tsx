@@ -117,39 +117,39 @@ const Musics: React.FC = () => {
   };
 
   // Handle audio ending
- useEffect(() => {
-  const handleEnded = () => {
-    if (!currentPlayingId) return;
-    
-    if (isRepeat) {
-      // Repeat the current song
-      const audio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
-      if (audio) {
-        audio.currentTime = 0;
-        audio.play().catch(error => console.error("Playback failed:", error));
+  useEffect(() => {
+    const handleEnded = () => {
+      if (!currentPlayingId) return;
+
+      if (isRepeat) {
+        // Repeat the current song
+        const audio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
+        if (audio) {
+          audio.currentTime = 0;
+          audio.play().catch(error => console.error("Playback failed:", error));
+        }
+      } else {
+        // Proceed to next song
+        handleNext();
       }
-    } else {
-      // Proceed to next song
-      handleNext();
-    }
-  };
+    };
 
-  Object.values(audioRefs).forEach(ref => {
-    const audio = ref.current;
-    if (audio) {
-      audio.addEventListener('ended', handleEnded);
-    }
-  });
-
-  return () => {
     Object.values(audioRefs).forEach(ref => {
       const audio = ref.current;
       if (audio) {
-        audio.removeEventListener('ended', handleEnded);
+        audio.addEventListener('ended', handleEnded);
       }
     });
-  };
-}, [currentPlayingId, filteredMusicItems, isRepeat]); // Add isRepeat to dependencies
+
+    return () => {
+      Object.values(audioRefs).forEach(ref => {
+        const audio = ref.current;
+        if (audio) {
+          audio.removeEventListener('ended', handleEnded);
+        }
+      });
+    };
+  }, [currentPlayingId, filteredMusicItems, isRepeat]); // Add isRepeat to dependencies
   // Scroll handling
   const debounce = (func: Function, timeout = 100) => {
     let timer: NodeJS.Timeout;
@@ -202,31 +202,31 @@ const Musics: React.FC = () => {
   }, [centeredCard, currentPlayingId]); // Added currentPlayingId to dependencies
 
   // Search functionality
- const handleSearch = (query: string) => {
-  const filtered = musicItems.filter(item =>
-    item.title.toLowerCase().includes(query.toLowerCase())
-  );
-  setFilteredMusicItems(filtered);
+  const handleSearch = (query: string) => {
+    const filtered = musicItems.filter(item =>
+      item.title.toLowerCase().includes(query.toLowerCase())
+    );
+    setFilteredMusicItems(filtered);
 
-  // Update centered card to the first item in filtered results (if any)
-  const newCenteredCard = filtered.length > 0 ? filtered[0].id : null;
-  setCenteredCard(newCenteredCard);
+    // Update centered card to the first item in filtered results (if any)
+    const newCenteredCard = filtered.length > 0 ? filtered[0].id : null;
+    setCenteredCard(newCenteredCard);
 
-  // If current playing song is not in filtered results, stop playback
-  if (currentPlayingId && !filtered.some(item => item.id === currentPlayingId)) {
-    audioRefs[currentPlayingId as keyof typeof audioRefs].current?.pause();
-    setCurrentPlayingId(null);
-    setIsPlaying(false);
-    setCurrentProgress(0);
-  }
+    // If current playing song is not in filtered results, stop playback
+    if (currentPlayingId && !filtered.some(item => item.id === currentPlayingId)) {
+      audioRefs[currentPlayingId as keyof typeof audioRefs].current?.pause();
+      setCurrentPlayingId(null);
+      setIsPlaying(false);
+      setCurrentProgress(0);
+    }
 
-  // If there are filtered results, scroll to the first one
-  if (filtered.length > 0 && containerRef.current) {
-    setTimeout(() => {
-      handleCardClick(filtered[0].id);
-    }, 100);
-  }
-};
+    // If there are filtered results, scroll to the first one
+    if (filtered.length > 0 && containerRef.current) {
+      setTimeout(() => {
+        handleCardClick(filtered[0].id);
+      }, 100);
+    }
+  };
 
   // Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -424,7 +424,10 @@ const Musics: React.FC = () => {
                   filteredMusicItems.findIndex(item => item.id === centeredCard) >= filteredMusicItems.length - 1
                 }
               />
-              <MusicRepeatToggle/>
+              <MusicRepeatToggle
+                isRepeat={isRepeat}
+                onToggle={() => setIsRepeat(!isRepeat)}
+              />
             </div>
           </div>
         </IonCard>
