@@ -30,42 +30,76 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!isPlaying || !audioElement) {
-      // Reset bars when not playing
-      barsRef.current.forEach(bar => {
-        if (bar) {
-          bar.style.height = '10%';
-        }
-      });
+    // Cleanup function
+    const cleanup = () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
+      
+      if (sourceRef.current) {
+        sourceRef.current.disconnect();
+        sourceRef.current = null;
+      }
+      
+      if (analyserRef.current) {
+        analyserRef.current.disconnect();
+        analyserRef.current = null;
+      }
+      
+      if (audioContextRef.current?.state !== 'closed') {
+        audioContextRef.current?.close();
+        audioContextRef.current = null;
+      }
+      
+      // Reset bars
+      barsRef.current.forEach(bar => {
+        if (bar) {
+          bar.style.height = '10%';
+          bar.style.opacity = '0.4';
+        }
+      });
+    };
+
+    if (!isPlaying || !audioElement) {
+      cleanup();
       return;
     }
 
     // Setup audio context and analyzer
     const setupAudioAnalysis = () => {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;  // Increased for better frequency resolution
+      cleanup(); // Clean up any existing setup
       
-      const source = audioContext.createMediaElementSource(audioElement);
-      source.connect(analyser);
-      analyser.connect(audioContext.destination);
-      
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      
-      audioContextRef.current = audioContext;
-      analyserRef.current = analyser;
-      sourceRef.current = source;
-      dataArrayRef.current = dataArray;
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        
+        const source = audioContext.createMediaElementSource(audioElement);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+        
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        
+        audioContextRef.current = audioContext;
+        analyserRef.current = analyser;
+        sourceRef.current = source;
+        dataArrayRef.current = dataArray;
+        
+        return true;
+      } catch (error) {
+        console.error('Audio analysis setup failed:', error);
+        return false;
+      }
     };
 
-    // Only set up if we haven't already
-    if (!audioContextRef.current) {
-      setupAudioAnalysis();
+    // Only set up if we haven't already or if the audio element changed
+    if (!audioContextRef.current || 
+        sourceRef.current?.mediaElement !== audioElement) {
+      if (!setupAudioAnalysis()) {
+        return;
+      }
     }
 
     // Animation loop
@@ -99,14 +133,7 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
 
     animationFrameRef.current = requestAnimationFrame(animate);
 
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      // Don't disconnect here - we want to keep the audio context alive
-      // between play/pause toggles
-    };
+    return cleanup;
   }, [isPlaying, audioElement]);
 
   const bars = Array.from({ length: barCount });
