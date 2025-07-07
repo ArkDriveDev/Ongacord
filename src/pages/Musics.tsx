@@ -20,8 +20,8 @@ import MusicPlayButton from '../components/MusicsProps/MusicPlayButton';
 import MusicRepeatButton from '../components/MusicsProps/MusicRepeatButton';
 import MusicSpectrum from '../components/MusicsProps/MusicSpectrum';
 import MusicRestartButton from '../components/MusicsProps/MusicRestartButton';
-import MusicNext from '../components/MusicsProps/MusicNext';
 import MusicPrevious from '../components/MusicsProps/MusicPrevious';
+import MusicNext from '../components/MusicsProps/MusicNext';
 
 interface MusicItem {
   id: number;
@@ -313,24 +313,24 @@ const Musics: React.FC = () => {
   };
 
   const handleNext = () => {
-  if (!currentPlayingId || !centeredCard) return;
+    if (!currentPlayingId || !centeredCard) return;
 
-  // Find the index of the currently playing song
-  const currentIndex = filteredMusicItems.findIndex(item => item.id === centeredCard);
+    // Find the index of the currently playing song
+    const currentIndex = filteredMusicItems.findIndex(item => item.id === centeredCard);
 
-  // If there's a next song in the array
-  if (currentIndex < filteredMusicItems.length - 1) {
-    const nextId = filteredMusicItems[currentIndex + 1].id;
+    // If there's a next song in the array
+    if (currentIndex < filteredMusicItems.length - 1) {
+      const nextId = filteredMusicItems[currentIndex + 1].id;
 
-    // Scroll to the next card
-    handleCardClick(nextId);
+      // Scroll to the next card
+      handleCardClick(nextId);
 
-    // Play the next song after a small delay to allow scrolling to complete
-    setTimeout(() => {
-      handlePlayPause(nextId);
-    }, 300);
-  }
-};
+      // Play the next song after a small delay to allow scrolling to complete
+      setTimeout(() => {
+        handlePlayPause(nextId);
+      }, 300);
+    }
+  };
 
   return (
     <IonPage>
@@ -415,7 +415,14 @@ const Musics: React.FC = () => {
                 onPlayPause={() => centeredCard && handlePlayPause(centeredCard)}
                 disabled={!centeredCard}
               />
-              <MusicNext />
+              <MusicNext
+                onClick={handleNext}
+                disabled={
+                  !currentPlayingId ||
+                  !centeredCard ||
+                  filteredMusicItems.findIndex(item => item.id === centeredCard) >= filteredMusicItems.length - 1
+                }
+              />
               <MusicRepeatButton />
             </div>
           </div>
