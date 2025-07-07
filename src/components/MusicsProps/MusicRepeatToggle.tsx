@@ -1,10 +1,19 @@
 import { IonButton, IonIcon } from '@ionic/react';
 import { repeat, repeatOutline } from 'ionicons/icons';
 
-const MusicRepeatToggle: React.FC = () => {
+interface MusicRepeatToggleProps {
+  isRepeat: boolean;
+  onToggle: () => void;
+}
+
+const MusicRepeatToggle: React.FC<MusicRepeatToggleProps> = ({ isRepeat, onToggle }) => {
   return (
-    <IonButton color="tertiary" shape="round">
-      <IonIcon icon={repeat} />
+    <IonButton 
+      color={isRepeat ? "primary" : "tertiary"} 
+      shape="round"
+      onClick={onToggle}
+    >
+      <IonIcon icon={isRepeat ? repeat : repeatOutline} />
     </IonButton>
   );
 };
