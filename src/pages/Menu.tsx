@@ -3,10 +3,11 @@ import {
   IonMenu, IonMenuButton, IonMenuToggle, IonPage, 
   IonTitle, IonToolbar, IonRouterOutlet
 } from '@ionic/react';
-import { prismOutline, cubeOutline } from 'ionicons/icons';
-import { Route, Redirect, useLocation } from 'react-router-dom';
+import { prismOutline, cubeOutline, musicalNoteOutline } from 'ionicons/icons';
+import { Route, Redirect} from 'react-router-dom';
 import Hologram from './Hologram';
 import Models from './Models';
+import Musics from './Musics';
 
 const Menu: React.FC = () => {
   const glow = { 
@@ -21,7 +22,8 @@ const Menu: React.FC = () => {
 
   const menuItems = [
     { name: 'Hologram', url: '/hologram', icon: prismOutline },
-    { name: 'Models', url: '/models', icon: cubeOutline }
+    { name: 'Models', url: '/models', icon: cubeOutline },
+    { name: 'Musics', url: '/musics', icon: musicalNoteOutline },
   ];
 
   const h1Style = { ...glow, color: 'skyblue' };
@@ -69,6 +71,7 @@ const Menu: React.FC = () => {
           <Route exact path="/" render={() => <Redirect to="/models" />} />
           <Route exact path="/hologram" component={Hologram} />
           <Route exact path="/models" component={Models} />
+          <Route exact path="/musics" component={Musics} />
         </IonRouterOutlet>
       </IonPage>
     </>
