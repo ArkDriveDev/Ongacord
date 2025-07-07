@@ -1,0 +1,29 @@
+.spectrum-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  height: 100px;
+  width: 100%;
+  padding: 8px 0;
+  background: #111;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.spectrum-bar {
+  width: 6px;
+  height: 20%;
+  background: linear-gradient(180deg, #ffc107, #ff5722);
+  animation: bounce 1s infinite ease-in-out;
+  border-radius: 4px;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    height: 20%;
+  }
+  50% {
+    height: 100%;
+  }
+}
