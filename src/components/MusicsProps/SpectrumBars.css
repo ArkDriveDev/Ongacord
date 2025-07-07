@@ -3,17 +3,17 @@
   align-items: flex-end;
   justify-content: center;
   gap: 4px;
-  height: 100px;
+  height: 40px;
   width: 100%;
   padding: 8px 0;
-  background: #111;
+  background: transparent;
   border-radius: 12px;
   overflow: hidden;
 }
 
 .spectrum-bar {
   width: 6px;
-  height: 20%;
+  height: 10%;
   background: linear-gradient(180deg, #ffc107, #ff5722);
   animation: bounce 1s infinite ease-in-out;
   border-radius: 4px;

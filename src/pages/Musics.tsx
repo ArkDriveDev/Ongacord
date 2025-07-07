@@ -22,6 +22,7 @@ import MusicRestartButton from '../components/MusicsProps/MusicRestartButton';
 import MusicPrevious from '../components/MusicsProps/MusicPrevious';
 import MusicNext from '../components/MusicsProps/MusicNext';
 import MusicRepeatToggle from '../components/MusicsProps/MusicRepeatToggle';
+import SpectrumBars from '../components/MusicsProps/SpectrumBars';
 
 interface MusicItem {
   id: number;
@@ -392,6 +393,7 @@ const Musics: React.FC = () => {
         {/* Player Card */}
         <IonCard className="music-player-card">
           <div className="ion-padding">
+              <SpectrumBars barCount={30} />
             <MusicSpectrum
               progress={currentProgress}
               onSeek={(newProgress) => {
