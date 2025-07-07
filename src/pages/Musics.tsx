@@ -192,20 +192,31 @@ const Musics: React.FC = () => {
   }, [centeredCard, currentPlayingId]); // Added currentPlayingId to dependencies
 
   // Search functionality
-  const handleSearch = (query: string) => {
-    const filtered = musicItems.filter(item =>
-      item.title.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredMusicItems(filtered);
+ const handleSearch = (query: string) => {
+  const filtered = musicItems.filter(item =>
+    item.title.toLowerCase().includes(query.toLowerCase())
+  );
+  setFilteredMusicItems(filtered);
 
-    // If current playing song is not in filtered results, stop playback
-    if (currentPlayingId && !filtered.some(item => item.id === currentPlayingId)) {
-      audioRefs[currentPlayingId as keyof typeof audioRefs].current?.pause();
-      setCurrentPlayingId(null);
-      setIsPlaying(false);
-      setCurrentProgress(0);
-    }
-  };
+  // Update centered card to the first item in filtered results (if any)
+  const newCenteredCard = filtered.length > 0 ? filtered[0].id : null;
+  setCenteredCard(newCenteredCard);
+
+  // If current playing song is not in filtered results, stop playback
+  if (currentPlayingId && !filtered.some(item => item.id === currentPlayingId)) {
+    audioRefs[currentPlayingId as keyof typeof audioRefs].current?.pause();
+    setCurrentPlayingId(null);
+    setIsPlaying(false);
+    setCurrentProgress(0);
+  }
+
+  // If there are filtered results, scroll to the first one
+  if (filtered.length > 0 && containerRef.current) {
+    setTimeout(() => {
+      handleCardClick(filtered[0].id);
+    }, 100);
+  }
+};
 
   // Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
