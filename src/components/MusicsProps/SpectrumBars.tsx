@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import './SpectrumBars.css';
 
 interface SpectrumBarsProps {
@@ -12,8 +12,20 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
   isPlaying = false, 
   audioRef 
 }) => {
-  const barsRef = useRef<HTMLDivElement[]>([]);
-  const animationFrameRef = useRef<number>();
+  // Create an array to hold all bar refs
+  const barsRef = useRef<(HTMLDivElement | null)[]>([]);
+  
+  // Initialize the array with null values
+  useEffect(() => {
+    barsRef.current = Array(barCount).fill(null);
+  }, [barCount]);
+
+  // Create a callback ref function
+  const setBarRef = useCallback((index: number) => (el: HTMLDivElement | null) => {
+    barsRef.current[index] = el;
+  }, []);
+
+  const animationFrameRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
@@ -23,8 +35,14 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
     if (!isPlaying || !audioRef?.current) {
       // Reset bars when not playing
       barsRef.current.forEach(bar => {
-        bar.style.height = '10%';
+        if (bar) {
+          bar.style.height = '10%';
+        }
       });
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
       return;
     }
 
@@ -63,10 +81,13 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
       const dataArray = dataArrayRef.current;
       
       for (let i = 0; i < bars.length; i++) {
-        // Use different frequency bands for different bars
-        const value = dataArray[i % dataArray.length];
-        const height = `${10 + (value / 255) * 90}%`;
-        bars[i].style.height = height;
+        const bar = bars[i];
+        if (bar) {
+          // Use different frequency bands for different bars
+          const value = dataArray[i % dataArray.length];
+          const height = `${10 + (value / 255) * 90}%`;
+          bar.style.height = height;
+        }
       }
       
       animationFrameRef.current = requestAnimationFrame(animate);
@@ -77,6 +98,7 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
       if (sourceRef.current && audioContextRef.current) {
         sourceRef.current.disconnect();
@@ -97,13 +119,11 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
       {bars.map((_, i) => (
         <div 
           key={i} 
-          ref={el => { if (el) barsRef.current[i] = el }}
+          ref={setBarRef(i)}
           className="spectrum-bar" 
           style={{ 
             animation: isPlaying ? 'none' : `bounce 1s infinite ease-in-out ${i * 0.1}s`,
-            background: isPlaying ? 
-              'linear-gradient(180deg, #320336, #ef05df)' : 
-              'linear-gradient(180deg, #320336, #ef05df)'
+            background: 'linear-gradient(180deg, #320336, #ef05df)'
           }} 
         />
       ))}
