@@ -61,6 +61,7 @@ const Musics: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
   const [filteredMusicItems, setFilteredMusicItems] = useState<MusicItem[]>(musicItems);
+  const [isRepeat, setIsRepeat] = useState(false);
 
   const handleRestart = () => {
     if (currentPlayingId) {
