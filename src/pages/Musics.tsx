@@ -117,30 +117,39 @@ const Musics: React.FC = () => {
   };
 
   // Handle audio ending
-  // Handle audio ending
-  useEffect(() => {
-    const handleEnded = () => {
-      if (!currentPlayingId) return;
-      handleNext(); // Use the same function we created for manual next
-    };
+ useEffect(() => {
+  const handleEnded = () => {
+    if (!currentPlayingId) return;
+    
+    if (isRepeat) {
+      // Repeat the current song
+      const audio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(error => console.error("Playback failed:", error));
+      }
+    } else {
+      // Proceed to next song
+      handleNext();
+    }
+  };
 
+  Object.values(audioRefs).forEach(ref => {
+    const audio = ref.current;
+    if (audio) {
+      audio.addEventListener('ended', handleEnded);
+    }
+  });
+
+  return () => {
     Object.values(audioRefs).forEach(ref => {
       const audio = ref.current;
       if (audio) {
-        audio.addEventListener('ended', handleEnded);
+        audio.removeEventListener('ended', handleEnded);
       }
     });
-
-    return () => {
-      Object.values(audioRefs).forEach(ref => {
-        const audio = ref.current;
-        if (audio) {
-          audio.removeEventListener('ended', handleEnded);
-        }
-      });
-    };
-  }, [currentPlayingId, filteredMusicItems]); // Add filteredMusicItems to dependencies
-
+  };
+}, [currentPlayingId, filteredMusicItems, isRepeat]); // Add isRepeat to dependencies
   // Scroll handling
   const debounce = (func: Function, timeout = 100) => {
     let timer: NodeJS.Timeout;
