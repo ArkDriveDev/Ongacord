@@ -138,21 +138,6 @@ const Musics: React.FC = () => {
         }
       });
     };
-    Object.values(audioRefs).forEach(ref => {
-      const audio = ref.current;
-      if (audio) {
-        audio.addEventListener('ended', handleEnded);
-      }
-    });
-
-    return () => {
-      Object.values(audioRefs).forEach(ref => {
-        const audio = ref.current;
-        if (audio) {
-          audio.removeEventListener('ended', handleEnded);
-        }
-      });
-    };
   }, [currentPlayingId, filteredMusicItems]); // Add filteredMusicItems to dependencies
 
   // Scroll handling
