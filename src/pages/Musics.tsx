@@ -292,6 +292,26 @@ const Musics: React.FC = () => {
     setCenteredCard(id);
   };
 
+  const handlePrevious = () => {
+  if (!currentPlayingId || !centeredCard) return;
+
+  // Find the index of the currently playing song
+  const currentIndex = filteredMusicItems.findIndex(item => item.id === centeredCard);
+
+  // If there's a previous song in the array
+  if (currentIndex > 0) {
+    const prevId = filteredMusicItems[currentIndex - 1].id;
+
+    // Scroll to the previous card
+    handleCardClick(prevId);
+
+    // Play the previous song after a small delay to allow scrolling to complete
+    setTimeout(() => {
+      handlePlayPause(prevId);
+    }, 300);
+  }
+};
+
   return (
     <IonPage>
       <IonHeader>
