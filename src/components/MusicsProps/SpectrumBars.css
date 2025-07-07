@@ -17,6 +17,7 @@
   background: linear-gradient(180deg, #320336, #ef05df);
   animation: bounce 1s infinite ease-in-out;
   border-radius: 4px;
+  transition: height 0.1s ease-out;
 }
 
 @keyframes bounce {
