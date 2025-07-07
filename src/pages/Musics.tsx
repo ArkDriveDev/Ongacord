@@ -16,13 +16,12 @@ import MusicImage from '../images/Music.png';
 
 // Components
 import ModelSearch from '../components/ModelsProps/ModelSearch';
-import MusicPassBackward from '../components/MusicsProps/MusicPassBackward';
 import MusicPlayButton from '../components/MusicsProps/MusicPlayButton';
-import MusicPassforward from '../components/MusicsProps/MusicPassforward';
 import MusicRepeatButton from '../components/MusicsProps/MusicRepeatButton';
-import MusicPlayAll from '../components/MusicsProps/MusicPlayAll';
 import MusicSpectrum from '../components/MusicsProps/MusicSpectrum';
 import MusicRestartButton from '../components/MusicsProps/MusicRestartButton';
+import MusicPrevious from '../components/MusicsProps/MusicPrevious';
+import MusicNext from '../components/MusicsProps/MusicNext';
 
 interface MusicItem {
   id: number;
@@ -117,49 +116,49 @@ const Musics: React.FC = () => {
   };
 
   // Handle audio ending
- // Handle audio ending
-useEffect(() => {
-  const handleEnded = () => {
-    if (!currentPlayingId) return;
+  // Handle audio ending
+  useEffect(() => {
+    const handleEnded = () => {
+      if (!currentPlayingId) return;
 
-    // Find the index of the currently playing song
-    const currentIndex = filteredMusicItems.findIndex(item => item.id === currentPlayingId);
-    
-    // If there's a next song in the array
-    if (currentIndex < filteredMusicItems.length - 1) {
-      const nextId = filteredMusicItems[currentIndex + 1].id;
-      
-      // Scroll to the next card
-      handleCardClick(nextId);
-      
-      // Play the next song after a small delay to allow scrolling to complete
-      setTimeout(() => {
-        handlePlayPause(nextId);
-      }, 300);
-    } else {
-      // No more songs, reset player state
-      setIsPlaying(false);
-      setCurrentPlayingId(null);
-      setCurrentProgress(0);
-    }
-  };
+      // Find the index of the currently playing song
+      const currentIndex = filteredMusicItems.findIndex(item => item.id === currentPlayingId);
 
-  Object.values(audioRefs).forEach(ref => {
-    const audio = ref.current;
-    if (audio) {
-      audio.addEventListener('ended', handleEnded);
-    }
-  });
+      // If there's a next song in the array
+      if (currentIndex < filteredMusicItems.length - 1) {
+        const nextId = filteredMusicItems[currentIndex + 1].id;
 
-  return () => {
+        // Scroll to the next card
+        handleCardClick(nextId);
+
+        // Play the next song after a small delay to allow scrolling to complete
+        setTimeout(() => {
+          handlePlayPause(nextId);
+        }, 300);
+      } else {
+        // No more songs, reset player state
+        setIsPlaying(false);
+        setCurrentPlayingId(null);
+        setCurrentProgress(0);
+      }
+    };
+
     Object.values(audioRefs).forEach(ref => {
       const audio = ref.current;
       if (audio) {
-        audio.removeEventListener('ended', handleEnded);
+        audio.addEventListener('ended', handleEnded);
       }
     });
-  };
-}, [currentPlayingId, filteredMusicItems]); // Add filteredMusicItems to dependencies
+
+    return () => {
+      Object.values(audioRefs).forEach(ref => {
+        const audio = ref.current;
+        if (audio) {
+          audio.removeEventListener('ended', handleEnded);
+        }
+      });
+    };
+  }, [currentPlayingId, filteredMusicItems]); // Add filteredMusicItems to dependencies
 
   // Scroll handling
   const debounce = (func: Function, timeout = 100) => {
@@ -363,7 +362,7 @@ useEffect(() => {
               disabled={!currentPlayingId}
             />
             <div className="player-controls">
-              <MusicPassBackward />
+              <MusicPrevious />
               <MusicRestartButton
                 onRestart={handleRestart}
                 disabled={!currentPlayingId}
@@ -373,7 +372,7 @@ useEffect(() => {
                 onPlayPause={() => centeredCard && handlePlayPause(centeredCard)}
                 disabled={!centeredCard}
               />
-              <MusicPassforward />
+              <MusicNext />
               <MusicRepeatButton />
             </div>
           </div>

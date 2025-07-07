@@ -1,7 +1,7 @@
 import { IonButton, IonIcon } from '@ionic/react';
 import { playSkipForward } from 'ionicons/icons';
 
-const MusicPassforward: React.FC = () => {
+const MusicNext: React.FC = () => {
   return (
     <IonButton color="secondary" shape="round">
       <IonIcon icon={playSkipForward} />
@@ -9,4 +9,4 @@ const MusicPassforward: React.FC = () => {
   );
 };
 
-export default MusicPassforward;
+export default MusicNext;
