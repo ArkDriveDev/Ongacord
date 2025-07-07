@@ -120,29 +120,24 @@ const Musics: React.FC = () => {
   useEffect(() => {
     const handleEnded = () => {
       if (!currentPlayingId) return;
-
-      // Find the index of the currently playing song
-      const currentIndex = filteredMusicItems.findIndex(item => item.id === currentPlayingId);
-
-      // If there's a next song in the array
-      if (currentIndex < filteredMusicItems.length - 1) {
-        const nextId = filteredMusicItems[currentIndex + 1].id;
-
-        // Scroll to the next card
-        handleCardClick(nextId);
-
-        // Play the next song after a small delay to allow scrolling to complete
-        setTimeout(() => {
-          handlePlayPause(nextId);
-        }, 300);
-      } else {
-        // No more songs, reset player state
-        setIsPlaying(false);
-        setCurrentPlayingId(null);
-        setCurrentProgress(0);
-      }
+      handleNext(); // Use the same function we created for manual next
     };
 
+    Object.values(audioRefs).forEach(ref => {
+      const audio = ref.current;
+      if (audio) {
+        audio.addEventListener('ended', handleEnded);
+      }
+    });
+
+    return () => {
+      Object.values(audioRefs).forEach(ref => {
+        const audio = ref.current;
+        if (audio) {
+          audio.removeEventListener('ended', handleEnded);
+        }
+      });
+    };
     Object.values(audioRefs).forEach(ref => {
       const audio = ref.current;
       if (audio) {
