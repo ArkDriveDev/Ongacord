@@ -7,53 +7,53 @@ interface SpectrumBarsProps {
   audioElement?: HTMLAudioElement | null;
 }
 
-const SpectrumBars: React.FC<SpectrumBarsProps> = ({ 
-  barCount = 20, 
-  isPlaying = false, 
-  audioElement 
+const SpectrumBars: React.FC<SpectrumBarsProps> = ({
+  barCount = 20,
+  isPlaying = false,
+  audioElement,
 }) => {
+  /* ────────────────────────────
+   * Refs
+   * ────────────────────────────*/
   const barsRef = useRef<(HTMLDivElement | null)[]>([]);
   const animationFrameRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
 
-  // Initialize the array with null values
+  /**
+   * Cache of MediaElementAudioSourceNode keyed by <audio> element.
+   * WeakMap ensures automatic GC when elements are gone.
+   */
+  const sourceCacheRef = useRef(
+    new WeakMap<HTMLAudioElement, MediaElementAudioSourceNode>()
+  );
+  /** The source node that is *currently* feeding the analyser. */
+  const currentSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+
+  /* ────────────────────────────
+   * Initialise bar refs
+   * ────────────────────────────*/
   useEffect(() => {
     barsRef.current = Array(barCount).fill(null);
   }, [barCount]);
 
-  // Create a callback ref function
-  const setBarRef = useCallback((index: number) => (el: HTMLDivElement | null) => {
-    barsRef.current[index] = el;
-  }, []);
+  /* eslint-disable react-hooks/exhaustive-deps */
+  const setBarRef = useCallback(
+    (index: number) => (el: HTMLDivElement | null) => {
+      barsRef.current[index] = el;
+    },
+    []
+  );
+  /* eslint-enable react-hooks/exhaustive-deps */
 
+  /* ────────────────────────────
+   * Core effect: connect / animate when playing
+   * ────────────────────────────*/
   useEffect(() => {
-    // Cleanup function
-    const cleanup = () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      
-      if (sourceRef.current) {
-        sourceRef.current.disconnect();
-        sourceRef.current = null;
-      }
-      
-      if (analyserRef.current) {
-        analyserRef.current.disconnect();
-        analyserRef.current = null;
-      }
-      
-      if (audioContextRef.current?.state !== 'closed') {
-        audioContextRef.current?.close();
-        audioContextRef.current = null;
-      }
-      
-      // Reset bars
-      barsRef.current.forEach(bar => {
+    /** Reset bar visuals to idle state. */
+    const resetBars = () => {
+      barsRef.current.forEach((bar) => {
         if (bar) {
           bar.style.height = '10%';
           bar.style.opacity = '0.4';
@@ -61,94 +61,122 @@ const SpectrumBars: React.FC<SpectrumBarsProps> = ({
       });
     };
 
+    // Not playing or no element → ensure cleanup + idle bars.
     if (!isPlaying || !audioElement) {
-      cleanup();
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      resetBars();
       return;
     }
 
-    // Setup audio context and analyzer
-    const setupAudioAnalysis = () => {
-      cleanup(); // Clean up any existing setup
-      
-      try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        
-        const source = audioContext.createMediaElementSource(audioElement);
-        source.connect(analyser);
-        analyser.connect(audioContext.destination);
-        
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        
-        audioContextRef.current = audioContext;
-        analyserRef.current = analyser;
-        sourceRef.current = source;
-        dataArrayRef.current = dataArray;
-        
-        return true;
-      } catch (error) {
-        console.error('Audio analysis setup failed:', error);
-        return false;
-      }
-    };
-
-    // Only set up if we haven't already or if the audio element changed
-    if (!audioContextRef.current || 
-        sourceRef.current?.mediaElement !== audioElement) {
-      if (!setupAudioAnalysis()) {
-        return;
-      }
+    /** Lazy‑create AudioContext. */
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current =
+        new (window.AudioContext || (window as any).webkitAudioContext)();
     }
 
-    // Animation loop
+    /** Lazy‑create Analyser. */
+    if (!analyserRef.current) {
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 256;
+      dataArrayRef.current = new Uint8Array(analyserRef.current.frequencyBinCount);
+    }
+
+    /** Obtain (or create once) a source node for this <audio>. */
+    let sourceNode = sourceCacheRef.current.get(audioElement);
+    if (!sourceNode) {
+      sourceNode = audioContextRef.current.createMediaElementSource(audioElement);
+      sourceCacheRef.current.set(audioElement, sourceNode);
+    }
+
+    /** Ensure the analyser is only fed by *one* source at a time. */
+    if (currentSourceRef.current && currentSourceRef.current !== sourceNode) {
+      currentSourceRef.current.disconnect();
+    }
+
+    // Connect graph: source → analyser → destination (for audible playback)
+    sourceNode.connect(analyserRef.current);
+    analyserRef.current.connect(audioContextRef.current.destination);
+    currentSourceRef.current = sourceNode;
+
+    /** Resume context if it was suspended (mobile autoplay policies, etc.) */
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(console.error);
+    }
+
+    /** Animation loop */
     const animate = () => {
-      if (!analyserRef.current || !dataArrayRef.current || !isPlaying) {
-        return;
-      }
+      if (!analyserRef.current || !dataArrayRef.current) return;
 
       analyserRef.current.getByteFrequencyData(dataArrayRef.current);
-      
-      const bars = barsRef.current;
-      const dataArray = dataArrayRef.current;
+      const { current: bars } = barsRef;
+      const { current: dataArray } = dataArrayRef;
       const bufferLength = dataArray.length;
-      
+
       for (let i = 0; i < bars.length; i++) {
         const bar = bars[i];
-        if (bar) {
-          // Map bar index to frequency band
-          const bandIndex = Math.floor((i / bars.length) * bufferLength);
-          const value = dataArray[bandIndex];
-          // Apply some smoothing and scaling
-          const height = `${10 + (value / 255) * 90}%`;
-          bar.style.height = height;
-          // Optional: Add color variation based on intensity
-          bar.style.opacity = `${0.4 + (value / 255) * 0.6}`;
-        }
+        if (!bar) continue;
+        const bandIndex = Math.floor((i / bars.length) * bufferLength);
+        const value = dataArray[bandIndex];
+        bar.style.height = `${10 + (value / 255) * 90}%`;
+        bar.style.opacity = `${0.4 + (value / 255) * 0.6}`;
       }
-      
+
       animationFrameRef.current = requestAnimationFrame(animate);
     };
 
     animationFrameRef.current = requestAnimationFrame(animate);
 
-    return cleanup;
+    /** Cleanup for this playing session */
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      if (currentSourceRef.current) {
+        currentSourceRef.current.disconnect();
+        currentSourceRef.current = null;
+      }
+      resetBars();
+    };
   }, [isPlaying, audioElement]);
 
-  const bars = Array.from({ length: barCount });
+  /* ────────────────────────────
+   * Final cleanup on unmount
+   * ────────────────────────────*/
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (currentSourceRef.current) {
+        currentSourceRef.current.disconnect();
+      }
+      if (analyserRef.current) {
+        analyserRef.current.disconnect();
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch((e) => console.error('Failed to close AudioContext', e));
+      }
+    };
+  }, []);
 
+  /* ────────────────────────────
+   * Render
+   * ────────────────────────────*/
   return (
     <div className="spectrum-container">
-      {bars.map((_, i) => (
-        <div 
-          key={i} 
+      {Array.from({ length: barCount }).map((_, i) => (
+        <div
+          key={i}
           ref={setBarRef(i)}
-          className="spectrum-bar" 
-          style={{ 
+          className="spectrum-bar"
+          style={{
             animation: isPlaying ? 'none' : `bounce 1s infinite ease-in-out ${i * 0.05}s`,
-            background: 'linear-gradient(180deg, #320336, #ef05df)'
-          }} 
+            background: 'linear-gradient(180deg, #320336 0%, #ef05df 100%)',
+          }}
         />
       ))}
     </div>

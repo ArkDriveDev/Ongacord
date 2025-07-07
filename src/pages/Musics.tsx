@@ -93,29 +93,39 @@ const Musics: React.FC = () => {
   }, [currentPlayingId]);
 
   // Handle play/pause
-  const handlePlayPause = (id: number) => {
-    const audioRef = audioRefs[id as keyof typeof audioRefs].current;
-    if (!audioRef) return;
+ const handlePlayPause = async (id: number) => {
+  const audioRef = audioRefs[id as keyof typeof audioRefs].current;
+  if (!audioRef) return;
 
+  try {
     if (currentPlayingId === id) {
       if (isPlaying) {
-        audioRef.pause();
+        await audioRef.pause();
       } else {
-        audioRef.play().catch(error => console.error("Playback failed:", error));
+        await audioRef.play();
       }
       setIsPlaying(!isPlaying);
     } else {
       // Pause currently playing audio if any
       if (currentPlayingId) {
-        audioRefs[currentPlayingId as keyof typeof audioRefs].current?.pause();
+        const currentAudio = audioRefs[currentPlayingId as keyof typeof audioRefs].current;
+        if (currentAudio) {
+          await currentAudio.pause();
+          currentAudio.currentTime = 0; // Reset position if switching tracks
+        }
       }
+      
       // Play new audio
       audioRef.currentTime = 0;
-      audioRef.play().catch(error => console.error("Playback failed:", error));
+      await audioRef.play();
       setCurrentPlayingId(id);
       setIsPlaying(true);
     }
-  };
+  } catch (error) {
+    console.error("Playback failed:", error);
+    setIsPlaying(false);
+  }
+};
 
   // Handle audio ending
   useEffect(() => {
@@ -381,6 +391,7 @@ const Musics: React.FC = () => {
                   <audio
                     ref={audioRefs[item.id as keyof typeof audioRefs]}
                     src={item.audioSrc}
+                    preload="none"
                   />
                 </IonCard>
               </div>
