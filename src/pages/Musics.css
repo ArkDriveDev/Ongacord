@@ -108,7 +108,7 @@
 }
 /* Music Player Card - Compact Version */
 .music-player-card {
-  max-width: 25%; /* Instead of full width */
+  max-width: 90%; /* Instead of full width */
   margin: 0 auto; /* Center horizontally */
   margin-top: 1%;
   margin-bottom: 2%;
