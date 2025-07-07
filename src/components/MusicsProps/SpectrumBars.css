@@ -14,7 +14,7 @@
 .spectrum-bar {
   width: 6px;
   height: 10%;
-  background: linear-gradient(180deg, #ffc107, #ff5722);
+  background: linear-gradient(180deg, #320336, #ef05df);
   animation: bounce 1s infinite ease-in-out;
   border-radius: 4px;
 }
